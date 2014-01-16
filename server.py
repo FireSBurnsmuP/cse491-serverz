@@ -18,9 +18,10 @@ htmlResponse = """
 HTTP/1.0 200 OK
 Content-Type: text/html
 
+<!DOCTYPE html>
 <html>
   <body>
-  <h1>Hello, world</h1> this is jbull477's Web server.
+  <h1>Hello, world</h1> this is fires' Web server.
   </body>
 </html>
 
