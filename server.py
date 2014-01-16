@@ -13,6 +13,7 @@ print 'The Web server URL for this would be http://%s:%d/' % (host, port)
 
 s.listen(5)                 # Now wait for client connection.
 
+# This code was jbull477's, I just added the DOCTYPE.
 htmlResponse = """
 
 HTTP/1.0 200 OK
@@ -32,6 +33,7 @@ while True:
     c, (client_host, client_port) = s.accept()
     print c.recv(1000)
     print 'Got connection from', client_host, client_port
+    # Also jbull477's. Turns out I was on the right track.
     c.send(htmlResponse)
     c.send('Thank you for connecting ')
     c.send("good bye.")
