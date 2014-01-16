@@ -3,6 +3,9 @@ import random
 import socket
 import time
 
+# @CAT Consistency of comment placement would be nice
+# Also, it doesn't work for me on ff or chrome
+
 s = socket.socket()         # Create a socket object
 host = socket.getfqdn() # Get local machine name
 port = random.randint(8000, 9999)
@@ -25,6 +28,8 @@ while True:
     #c.send('Thank you for connecting')
     c.send("HTTP/1.0 200 OK\r\n")
     c.send("Content-type: text/html\r\n")
+    # @CAT         ^^^ "Type" needs to be capitalized to be valid.
+    # Also, there should be another newline here, could be why it's broke.
     c.send("<html>\r\n")
     c.send("<body>\r\n")
     c.send("<h1>Hello World</h1>\r\n")
