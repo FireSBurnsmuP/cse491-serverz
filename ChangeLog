@@ -2,5 +2,7 @@
 
  * Initialized repository, created server.py and README.
 
-1/15/2014:  Updated server.py to return an HTTP 1.0 response containing ‘200 OK’ response line,
-a ‘Content-type’ of text/html, and a message body saying ‘<h1>Hello, world</h1> this is jbull477’s Web server.’
+2014-01-16  Chris Thomas
+
+ * Added code to server.py to send an HTML response, with DOCTYPE for html5
+
