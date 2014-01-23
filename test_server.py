@@ -15,7 +15,7 @@ class FakeConnection(object):
             r = self.to_recv
             self.to_recv = ""
             return r
-            
+
         r, self.to_recv = self.to_recv[:n], self.to_recv[n:]
         return r
 
@@ -29,11 +29,16 @@ class FakeConnection(object):
 
 def test_handle_connection():
     conn = FakeConnection("GET / HTTP/1.0\r\n\r\n")
-    expected_return = 'HTTP/1.0 200 OK\r\n' + \
-                      'Content-type: text/html\r\n' + \
-                      '\r\n' + \
-                      '<h1>Hello, world.</h1>' + \
-                      'This is ctb\'s Web server.'
+    EOF = "\r\n"
+    expected_return = "HTTP/1.0 200 OK" + EOF \
+                + "Content-Type: text/html" + EOF \
+                + EOF \
+                + "<!DOCTYPE html>" + EOF \
+                + "<html>" + EOF \
+                + "  <body>" + EOF \
+                + "  <h1>Hello, world</h1> this is fires' Web server." + EOF \
+                + "  </body>" + EOF \
+                + "</html>" + EOF
 
     server.handle_connection(conn)
 
