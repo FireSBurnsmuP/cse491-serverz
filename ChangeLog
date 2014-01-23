@@ -6,3 +6,8 @@
 
  * Added code to server.py to send an HTML response, with DOCTYPE for html5
 
+2014-01-16  Chris Thomas
+
+ * Changed server.py for testability, EOF standardizing
+ * Changed test_server.py to expect the kind of response I was sending
+
