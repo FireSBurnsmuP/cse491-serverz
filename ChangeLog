@@ -11,3 +11,9 @@
  * Changed server.py for testability, EOF standardizing
  * Changed test_server.py to expect the kind of response I was sending
 
+2014-01-16  Chris Thomas
+
+ * Changed server.py, adding GET, POST, HEAD functionality, 404s and 405s
+ * Added tests to test_server.py for all of the above
+ * Made sure my code passed all the tests
+
