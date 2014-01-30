@@ -2,6 +2,8 @@
 import random
 import socket
 import time
+from urlparse import urlparse
+from urlparse import parse_qs
 
 def main():
     "Starts up the server and waits for connections"
@@ -28,7 +30,7 @@ def main():
 def handle_connection(conn):
     "Handles a given connection by sending the proper response"
 
-    EOF = "\r\n"
+    EOL = "\r\n"
     request = conn.recv(1000)
     # parse the request line
     request = request.splitlines()
@@ -41,103 +43,121 @@ def handle_connection(conn):
         html_response = head(request_line)
     else :
         # do other stuff
-        html_response = "HTTP/1.1 405 Method Not Allowed" + EOF + EOF
+        html_response = 'HTTP/1.1 405 Method Not Allowed{0}{0}'.format(EOL)
     conn.send(html_response)
     conn.close()
 
 def get(request_line) :
     "Processes a get request"
 
-    EOF = "\r\n"
-    if request_line[1] == '/':
-        html_response = "HTTP/1.1 200 OK" + EOF \
-                    + "Content-Type: text/html" + EOF \
-                    + EOF \
-                    + "<!DOCTYPE html>" + EOF \
-                    + "<html>" + EOF \
-                    + "  <body>" + EOF \
-                    + "  <h1>Hello, world</h1> this is fires' Web server." + EOF \
-                    + "  <h3>Links:</h3>" + EOF \
-                    + "  <div style=\"padding-left: 1.0em;\">" + EOF \
-                    + "    <ul>" + EOF \
-                    + "      <li><a href=\"/content\">Content</a></li>" + EOF \
-                    + "      <li><a href=\"/file\">File</a></li>" + EOF \
-                    + "      <li><a href=\"/image\">Image</a></li>" + EOF \
-                    + "    </ul>" + EOF \
-                    + "  </div>" + EOF \
-                    + "  </body>" + EOF \
-                    + "</html>" + EOF
-    elif request_line[1] == '/content':
-        html_response = "HTTP/1.1 200 OK" + EOF \
-                    + "Content-Type: text/html" + EOF \
-                    + EOF \
-                    + "<!DOCTYPE html>" + EOF \
-                    + "<html>" + EOF \
-                    + "  <body>" + EOF \
-                    + "  <h1>Hello, world</h1> this is the content on fires' Web server." + EOF \
-                    + "  </body>" + EOF \
-                    + "</html>" + EOF
-    elif request_line[1] == '/file':
-        html_response = "HTTP/1.1 200 OK" + EOF \
-                    + "Content-Type: text/html" + EOF \
-                    + EOF \
-                    + "<!DOCTYPE html>" + EOF \
-                    + "<html>" + EOF \
-                    + "  <body>" + EOF \
-                    + "  <h1>Hello, world</h1> this is the file on fires' Web server." + EOF \
-                    + "  </body>" + EOF \
-                    + "</html>" + EOF
-    elif request_line[1] == '/image':
-        html_response = "HTTP/1.1 200 OK" + EOF \
-                    + "Content-Type: text/html" + EOF \
-                    + EOF \
-                    + "<!DOCTYPE html>" + EOF \
-                    + "<html>" + EOF \
-                    + "  <body>" + EOF \
-                    + "  <h1>Hello, world</h1> this is the image on fires' Web server." + EOF \
-                    + "  </body>" + EOF \
-                    + "</html>" + EOF
+    parsed = urlparse(request_line[1])
+    path = parsed.path.lower()
+    EOL = "\r\n"
+    if path in ('/', 'index') :
+        html_response = EOL.join(['HTTP/1.1 200 OK',
+                    'Content-Type: text/html',
+                    '',
+                    '<!DOCTYPE html>',
+                    '<html>',
+                    '<body>',
+                    '  <h1>Hello, world</h1> this is fires&apos; Web server.',
+                    '  <h3>Links:</h3>',
+                    '  <div style="padding-left: 1.0em;">',
+                    '    <ul>',
+                    '      <li><a href="/content">Content</a></li>',
+                    '      <li><a href="/file">File</a></li>',
+                    '      <li><a href="/image">Image</a></li>',
+                    '      <li><a href="/form">Form</a></li>',
+                    '    </ul>',
+                    '  </div>',
+                    '</body>',
+                    '</html>'])
+    elif path in ('/content'):
+        html_response = EOL.join(['HTTP/1.1 200 OK',
+                    'Content-Type: text/html',
+                    '',
+                    '<!DOCTYPE html>',
+                    '<html>',
+                    '<body>',
+                    '  <h1>Hello, world</h1> this is the content on fires&apos; Web server.',
+                    '</body>',
+                    '</html>'])
+    elif path in ('/file'):
+        html_response = EOL.join(['HTTP/1.1 200 OK',
+                    'Content-Type: text/html',
+                    '',
+                    '<!DOCTYPE html>',
+                    '<html>',
+                    '<body>',
+                    '  <h1>Hello, world</h1> this is the file on fires&apos; Web server.',
+                    '</body>',
+                    '</html>'])
+    elif path in ('/image'):
+        html_response = EOL.join(['HTTP/1.1 200 OK',
+                    'Content-Type: text/html',
+                    '',
+                    '<!DOCTYPE html>',
+                    '<html>',
+                    '<body>',
+                    '  <h1>Hello, world</h1> this is the image on fires&apos; Web server.',
+                    '</body>',
+                    '</html>'])
+    elif path in ('/form'):
+        html_response = EOL.join(['HTTP/1.1 200 OK',
+                    'Content-Type: text/html',
+                    '',
+                    '<!DOCTYPE html>',
+                    '<html>',
+                    '<body>',
+                    '  <h1>Hello, world</h1> this is the form on fires&apos; Web server.',
+                    '  <form action="/submit" method="GET">',
+                    '    <input type="text" name="firstname" placeholder="First Name" required />',
+                    '    <input type="text" name="lastname" placeholder="Last Name" required /><br />',
+                    '    <input type="submit" value="Submit" />',
+                    '  </form>',
+                    '</body>',
+                    '</html>'])
+    elif path in ('/submit'):
+        # Okay, now to parse out the form variables
+        query = parse_qs(parsed.query)
+        html_response = EOL.join(['HTTP/1.1 200 OK',
+                    'Content-Type: text/html',
+                    '',
+                    '<!DOCTYPE html>',
+                    '<html>',
+                    '<body>',
+                    '  <h1>Hello Mr. {} {}.</h1>'.format(query["firstname"][0], query["lastname"][0]),
+                    '</body>',
+                    '</html>'])
     else :
-        html_response = "HTTP/1.1 404 Not Found" + EOF + EOF
+        html_response = 'HTTP/1.1 404 Not Found{0}{0}'.format(EOL)
     return html_response;
 
 def post(request_line) :
     "processes a POST request"
 
-    EOF = "\r\n"
-    html_response = "HTTP/1.1 200 OK" + EOF \
-                + "Content-Type: text/html" + EOF \
-                + EOF \
-                + "<!DOCTYPE html>" + EOF \
-                + "<html>" + EOF \
-                + "  <body>" + EOF \
-                + "  <h1>Hello, world</h1> you've attempted to POST to fires' Web server." + EOF \
-                + "  </body>" + EOF \
-                + "</html>" + EOF
+    EOL = "\r\n"
+    html_response = EOL.join(['HTTP/1.1 200 OK',
+                'Content-Type: text/html',
+                '',
+                '<!DOCTYPE html>',
+                '<html>',
+                '<body>',
+                '  <h1>Hello, world</h1> you&apos;ve attempted to POST to fires&apos; Web server.',
+                '</body>',
+                '</html>'])
     return html_response
 
 def head(request_line):
     "processes a HEAD request"
 
-    EOF = "\r\n"
-    if request_line[1] == '/':
-        html_response = "HTTP/1.1 200 OK" + EOF \
-                    + "Content-Type: text/html" + EOF \
-                    + EOF
-    elif request_line[1] == '/content':
-        html_response = "HTTP/1.1 200 OK" + EOF \
-                    + "Content-Type: text/html" + EOF \
-                    + EOF
-    elif request_line[1] == '/file':
-        html_response = "HTTP/1.1 200 OK" + EOF \
-                    + "Content-Type: text/html" + EOF \
-                    + EOF
-    elif request_line[1] == '/image':
-        html_response = "HTTP/1.1 200 OK" + EOF \
-                    + "Content-Type: text/html" + EOF \
-                    + EOF
+    parsed = urlparse(request_line[1])
+    path = parsed.path.lower()
+    EOL = "\r\n"
+    if path in ('/', '/index', '/file', '/content', '/image', '/submit', '/form'):
+        html_response = 'HTTP/1.1 200 OK{0}Content-Type: text/html{0}{0}'.format(EOL)
     else :
-        html_response = "HTTP/1.1 404 Not Found" + EOF + EOF
+        html_response = 'HTTP/1.1 404 Not Found{0}{0}'.format(EOL)
     return html_response
 
 

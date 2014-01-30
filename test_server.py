@@ -29,24 +29,25 @@ class FakeConnection(object):
 
 def test_handle_connection():
     conn = FakeConnection("GET / HTTP/1.1\r\n\r\n")
-    EOF = "\r\n"
-    expected_return = "HTTP/1.1 200 OK" + EOF \
-                    + "Content-Type: text/html" + EOF \
-                    + EOF \
-                    + "<!DOCTYPE html>" + EOF \
-                    + "<html>" + EOF \
-                    + "  <body>" + EOF \
-                    + "  <h1>Hello, world</h1> this is fires' Web server." + EOF \
-                    + "  <h3>Links:</h3>" + EOF \
-                    + "  <div style=\"padding-left: 1.0em;\">" + EOF \
-                    + "    <ul>" + EOF \
-                    + "      <li><a href=\"/content\">Content</a></li>" + EOF \
-                    + "      <li><a href=\"/file\">File</a></li>" + EOF \
-                    + "      <li><a href=\"/image\">Image</a></li>" + EOF \
-                    + "    </ul>" + EOF \
-                    + "  </div>" + EOF \
-                    + "  </body>" + EOF \
-                    + "</html>" + EOF
+    EOL = "\r\n"
+    expected_return = EOL.join(['HTTP/1.1 200 OK',
+                    'Content-Type: text/html',
+                    '',
+                    '<!DOCTYPE html>',
+                    '<html>',
+                    '<body>',
+                    '  <h1>Hello, world</h1> this is fires&apos; Web server.',
+                    '  <h3>Links:</h3>',
+                    '  <div style="padding-left: 1.0em;">',
+                    '    <ul>',
+                    '      <li><a href="/content">Content</a></li>',
+                    '      <li><a href="/file">File</a></li>',
+                    '      <li><a href="/image">Image</a></li>',
+                    '      <li><a href="/form">Form</a></li>',
+                    '    </ul>',
+                    '  </div>',
+                    '</body>',
+                    '</html>'])
 
     server.handle_connection(conn)
 
@@ -54,16 +55,16 @@ def test_handle_connection():
 
 def test_get_content():
     conn = FakeConnection("GET /content HTTP/1.1\r\n\r\n")
-    EOF = "\r\n"
-    expected_return = "HTTP/1.1 200 OK" + EOF \
-                    + "Content-Type: text/html" + EOF \
-                    + EOF \
-                    + "<!DOCTYPE html>" + EOF \
-                    + "<html>" + EOF \
-                    + "  <body>" + EOF \
-                    + "  <h1>Hello, world</h1> this is the content on fires' Web server." + EOF \
-                    + "  </body>" + EOF \
-                    + "</html>" + EOF
+    EOL = "\r\n"
+    expected_return = EOL.join(['HTTP/1.1 200 OK',
+                    'Content-Type: text/html',
+                    '',
+                    '<!DOCTYPE html>',
+                    '<html>',
+                    '<body>',
+                    '  <h1>Hello, world</h1> this is the content on fires&apos; Web server.',
+                    '</body>',
+                    '</html>'])
 
     server.handle_connection(conn)
 
@@ -71,16 +72,16 @@ def test_get_content():
 
 def test_get_image():
     conn = FakeConnection("GET /image HTTP/1.1\r\n\r\n")
-    EOF = "\r\n"
-    expected_return = "HTTP/1.1 200 OK" + EOF \
-                    + "Content-Type: text/html" + EOF \
-                    + EOF \
-                    + "<!DOCTYPE html>" + EOF \
-                    + "<html>" + EOF \
-                    + "  <body>" + EOF \
-                    + "  <h1>Hello, world</h1> this is the image on fires' Web server." + EOF \
-                    + "  </body>" + EOF \
-                    + "</html>" + EOF
+    EOL = "\r\n"
+    expected_return = EOL.join(['HTTP/1.1 200 OK',
+                    'Content-Type: text/html',
+                    '',
+                    '<!DOCTYPE html>',
+                    '<html>',
+                    '<body>',
+                    '  <h1>Hello, world</h1> this is the image on fires&apos; Web server.',
+                    '</body>',
+                    '</html>'])
 
     server.handle_connection(conn)
 
@@ -88,16 +89,55 @@ def test_get_image():
 
 def test_get_file():
     conn = FakeConnection("GET /file HTTP/1.1\r\n\r\n")
-    EOF = "\r\n"
-    expected_return = "HTTP/1.1 200 OK" + EOF \
-                    + "Content-Type: text/html" + EOF \
-                    + EOF \
-                    + "<!DOCTYPE html>" + EOF \
-                    + "<html>" + EOF \
-                    + "  <body>" + EOF \
-                    + "  <h1>Hello, world</h1> this is the file on fires' Web server." + EOF \
-                    + "  </body>" + EOF \
-                    + "</html>" + EOF
+    EOL = "\r\n"
+    expected_return = EOL.join(['HTTP/1.1 200 OK',
+                    'Content-Type: text/html',
+                    '',
+                    '<!DOCTYPE html>',
+                    '<html>',
+                    '<body>',
+                    '  <h1>Hello, world</h1> this is the file on fires&apos; Web server.',
+                    '</body>',
+                    '</html>'])
+
+    server.handle_connection(conn)
+
+    assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
+
+def test_get_form():
+    conn = FakeConnection("GET /form HTTP/1.1\r\n\r\n")
+    EOL = "\r\n"
+    expected_return = EOL.join(['HTTP/1.1 200 OK',
+                    'Content-Type: text/html',
+                    '',
+                    '<!DOCTYPE html>',
+                    '<html>',
+                    '<body>',
+                    '  <h1>Hello, world</h1> this is the form on fires&apos; Web server.',
+                    '  <form action="/submit" method="GET">',
+                    '    <input type="text" name="firstname" placeholder="First Name" required />',
+                    '    <input type="text" name="lastname" placeholder="Last Name" required /><br />',
+                    '    <input type="submit" value="Submit" />',
+                    '  </form>',
+                    '</body>',
+                    '</html>'])
+
+    server.handle_connection(conn)
+
+    assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
+
+def test_get_submit():
+    conn = FakeConnection("GET /submit?firstname=Zerxes&lastname=WaffleHouse HTTP/1.1\r\n\r\n")
+    EOL = "\r\n"
+    expected_return = EOL.join(['HTTP/1.1 200 OK',
+                    'Content-Type: text/html',
+                    '',
+                    '<!DOCTYPE html>',
+                    '<html>',
+                    '<body>',
+                    '  <h1>Hello Mr. Zerxes WaffleHouse.</h1>',
+                    '</body>',
+                    '</html>'])
 
     server.handle_connection(conn)
 
@@ -105,16 +145,16 @@ def test_get_file():
 
 def test_post():
     conn = FakeConnection("POST / HTTP/1.1\r\n\r\n")
-    EOF = "\r\n"
-    expected_return = "HTTP/1.1 200 OK" + EOF \
-                    + "Content-Type: text/html" + EOF \
-                    + EOF \
-                    + "<!DOCTYPE html>" + EOF \
-                    + "<html>" + EOF \
-                    + "  <body>" + EOF \
-                    + "  <h1>Hello, world</h1> you've attempted to POST to fires' Web server." + EOF \
-                    + "  </body>" + EOF \
-                    + "</html>" + EOF
+    EOL = "\r\n"
+    expected_return = EOL.join(['HTTP/1.1 200 OK',
+                    'Content-Type: text/html',
+                    '',
+                    '<!DOCTYPE html>',
+                    '<html>',
+                    '<body>',
+                    '  <h1>Hello, world</h1> you&apos;ve attempted to POST to fires&apos; Web server.',
+                    '</body>',
+                    '</html>'])
 
     server.handle_connection(conn)
 
@@ -122,8 +162,8 @@ def test_post():
 
 def test_put():
     conn = FakeConnection("PUT / HTTP/1.1\r\n\r\n")
-    EOF = "\r\n"
-    expected_return = "HTTP/1.1 405 Method Not Allowed" + EOF + EOF
+    EOL = "\r\n"
+    expected_return = "HTTP/1.1 405 Method Not Allowed" + EOL + EOL
 
     server.handle_connection(conn)
 
@@ -131,8 +171,8 @@ def test_put():
 
 def test_delete():
     conn = FakeConnection("DELETE / HTTP/1.1\r\n\r\n")
-    EOF = "\r\n"
-    expected_return = "HTTP/1.1 405 Method Not Allowed" + EOF + EOF
+    EOL = "\r\n"
+    expected_return = "HTTP/1.1 405 Method Not Allowed" + EOL + EOL
 
     server.handle_connection(conn)
 
@@ -140,10 +180,10 @@ def test_delete():
 
 def test_head():
     conn = FakeConnection("HEAD / HTTP/1.1\r\n\r\n")
-    EOF = "\r\n"
-    expected_return = "HTTP/1.1 200 OK" + EOF \
-                    + "Content-Type: text/html" + EOF \
-                    + EOF
+    EOL = "\r\n"
+    expected_return = "HTTP/1.1 200 OK" + EOL \
+                    + "Content-Type: text/html" + EOL \
+                    + EOL
 
     server.handle_connection(conn)
 
@@ -151,10 +191,10 @@ def test_head():
 
 def test_head_content():
     conn = FakeConnection("HEAD /content HTTP/1.1\r\n\r\n")
-    EOF = "\r\n"
-    expected_return = "HTTP/1.1 200 OK" + EOF \
-                    + "Content-Type: text/html" + EOF \
-                    + EOF
+    EOL = "\r\n"
+    expected_return = "HTTP/1.1 200 OK" + EOL \
+                    + "Content-Type: text/html" + EOL \
+                    + EOL
 
     server.handle_connection(conn)
 
@@ -162,10 +202,32 @@ def test_head_content():
 
 def test_head_file():
     conn = FakeConnection("HEAD /file HTTP/1.1\r\n\r\n")
-    EOF = "\r\n"
-    expected_return = "HTTP/1.1 200 OK" + EOF \
-                    + "Content-Type: text/html" + EOF \
-                    + EOF
+    EOL = "\r\n"
+    expected_return = "HTTP/1.1 200 OK" + EOL \
+                    + "Content-Type: text/html" + EOL \
+                    + EOL
+
+    server.handle_connection(conn)
+
+    assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
+
+def test_head_submit():
+    conn = FakeConnection("HEAD /file HTTP/1.1\r\n\r\n")
+    EOL = "\r\n"
+    expected_return = "HTTP/1.1 200 OK" + EOL \
+                    + "Content-Type: text/html" + EOL \
+                    + EOL
+
+    server.handle_connection(conn)
+
+    assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
+
+def test_head_form():
+    conn = FakeConnection("HEAD /file HTTP/1.1\r\n\r\n")
+    EOL = "\r\n"
+    expected_return = "HTTP/1.1 200 OK" + EOL \
+                    + "Content-Type: text/html" + EOL \
+                    + EOL
 
     server.handle_connection(conn)
 
@@ -173,11 +235,12 @@ def test_head_file():
 
 def test_head_image():
     conn = FakeConnection("HEAD /image HTTP/1.1\r\n\r\n")
-    EOF = "\r\n"
-    expected_return = "HTTP/1.1 200 OK" + EOF \
-                    + "Content-Type: text/html" + EOF \
-                    + EOF
+    EOL = "\r\n"
+    expected_return = "HTTP/1.1 200 OK" + EOL \
+                    + "Content-Type: text/html" + EOL \
+                    + EOL
 
     server.handle_connection(conn)
 
     assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
+
