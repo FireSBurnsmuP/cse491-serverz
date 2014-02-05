@@ -1,4 +1,7 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
+"""
+Sends a post request.
+"""
 import sys
 import requests
 

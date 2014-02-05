@@ -1,3 +1,7 @@
+"""
+Contains the tests for server.py
+"""
+import requests
 import server
 
 class FakeConnection(object):
@@ -11,6 +15,7 @@ class FakeConnection(object):
         self.is_closed = False
 
     def recv(self, n):
+        "receives something?"
         if n > len(self.to_recv):
             r = self.to_recv
             self.to_recv = ""
@@ -20,14 +25,29 @@ class FakeConnection(object):
         return r
 
     def send(self, s):
+        "sends something?"
         self.sent += s
 
     def close(self):
+        "closes connection?"
         self.is_closed = True
+
+def SendPost(url, payload):
+    """
+    Send a POST request to a given URL with a given payload
+    and return the response object. Just a wrapper to make it
+    easier to remember.
+    """
+    resp = requests.post(url, data=payload)
+    return resp
 
 # Test a basic GET call.
 
 def test_handle_connection():
+    """
+    Test the function that handles connections by sending
+    any request through it.
+    """
     conn = FakeConnection("GET / HTTP/1.1\r\n\r\n")
     EOL = "\r\n"
     expected_return = EOL.join(['HTTP/1.1 200 OK',
@@ -53,7 +73,29 @@ def test_handle_connection():
 
     assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
 
+def test_get_404():
+    "Tests the GET method handler for 404 error"
+    conn = FakeConnection("GET /idontexist HTTP/1.1\r\n\r\n")
+    EOL = "\r\n"
+    expected_return = 'HTTP/1.1 404 Not Found{0}{0}'.format(EOL)
+
+    server.handle_connection(conn)
+
+    assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
+
+
+def test_head_404():
+    "Tests the HEAD method handler for 404 error"
+    conn = FakeConnection("HEAD /idontexist HTTP/1.1\r\n\r\n")
+    EOL = "\r\n"
+    expected_return = 'HTTP/1.1 404 Not Found{0}{0}'.format(EOL)
+
+    server.handle_connection(conn)
+
+    assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
+
 def test_get_content():
+    "Tests the GET method handler for /content"
     conn = FakeConnection("GET /content HTTP/1.1\r\n\r\n")
     EOL = "\r\n"
     expected_return = EOL.join(['HTTP/1.1 200 OK',
@@ -71,6 +113,7 @@ def test_get_content():
     assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
 
 def test_get_image():
+    "Tests the GET method handler for /image"
     conn = FakeConnection("GET /image HTTP/1.1\r\n\r\n")
     EOL = "\r\n"
     expected_return = EOL.join(['HTTP/1.1 200 OK',
@@ -88,6 +131,7 @@ def test_get_image():
     assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
 
 def test_get_file():
+    "Tests the GET method handler for /file"
     conn = FakeConnection("GET /file HTTP/1.1\r\n\r\n")
     EOL = "\r\n"
     expected_return = EOL.join(['HTTP/1.1 200 OK',
@@ -105,6 +149,7 @@ def test_get_file():
     assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
 
 def test_get_form():
+    "Tests the GET method handler for /form"
     conn = FakeConnection("GET /form HTTP/1.1\r\n\r\n")
     EOL = "\r\n"
     expected_return = EOL.join(['HTTP/1.1 200 OK',
@@ -127,6 +172,7 @@ def test_get_form():
     assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
 
 def test_get_submit():
+    "Tests the GET method handler for /submit"
     conn = FakeConnection("GET /submit?firstname=Zerxes&lastname=WaffleHouse HTTP/1.1\r\n\r\n")
     EOL = "\r\n"
     expected_return = EOL.join(['HTTP/1.1 200 OK',
@@ -144,6 +190,7 @@ def test_get_submit():
     assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
 
 def test_post():
+    "Tests the POST method handler"
     conn = FakeConnection("POST / HTTP/1.1\r\n\r\n")
     EOL = "\r\n"
     expected_return = EOL.join(['HTTP/1.1 200 OK',
@@ -161,6 +208,7 @@ def test_post():
     assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
 
 def test_put():
+    "Tests the PUT method handler (405)"
     conn = FakeConnection("PUT / HTTP/1.1\r\n\r\n")
     EOL = "\r\n"
     expected_return = "HTTP/1.1 405 Method Not Allowed" + EOL + EOL
@@ -170,6 +218,7 @@ def test_put():
     assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
 
 def test_delete():
+    "Tests the DELETE method handler (405)"
     conn = FakeConnection("DELETE / HTTP/1.1\r\n\r\n")
     EOL = "\r\n"
     expected_return = "HTTP/1.1 405 Method Not Allowed" + EOL + EOL
@@ -179,6 +228,7 @@ def test_delete():
     assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
 
 def test_head():
+    "Tests the HEAD method handler for /"
     conn = FakeConnection("HEAD / HTTP/1.1\r\n\r\n")
     EOL = "\r\n"
     expected_return = "HTTP/1.1 200 OK" + EOL \
@@ -190,6 +240,7 @@ def test_head():
     assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
 
 def test_head_content():
+    "Tests the HEAD method handler for /content"
     conn = FakeConnection("HEAD /content HTTP/1.1\r\n\r\n")
     EOL = "\r\n"
     expected_return = "HTTP/1.1 200 OK" + EOL \
@@ -201,6 +252,7 @@ def test_head_content():
     assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
 
 def test_head_file():
+    "Tests the HEAD method handler for /file"
     conn = FakeConnection("HEAD /file HTTP/1.1\r\n\r\n")
     EOL = "\r\n"
     expected_return = "HTTP/1.1 200 OK" + EOL \
@@ -212,7 +264,8 @@ def test_head_file():
     assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
 
 def test_head_submit():
-    conn = FakeConnection("HEAD /file HTTP/1.1\r\n\r\n")
+    "Tests the HEAD method handler for /submit"
+    conn = FakeConnection("HEAD /submit HTTP/1.1\r\n\r\n")
     EOL = "\r\n"
     expected_return = "HTTP/1.1 200 OK" + EOL \
                     + "Content-Type: text/html" + EOL \
@@ -223,7 +276,8 @@ def test_head_submit():
     assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
 
 def test_head_form():
-    conn = FakeConnection("HEAD /file HTTP/1.1\r\n\r\n")
+    "Tests the HEAD method handler for /form"
+    conn = FakeConnection("HEAD /form HTTP/1.1\r\n\r\n")
     EOL = "\r\n"
     expected_return = "HTTP/1.1 200 OK" + EOL \
                     + "Content-Type: text/html" + EOL \
@@ -234,6 +288,7 @@ def test_head_form():
     assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
 
 def test_head_image():
+    "Tests the HEAD method handler for /image"
     conn = FakeConnection("HEAD /image HTTP/1.1\r\n\r\n")
     EOL = "\r\n"
     expected_return = "HTTP/1.1 200 OK" + EOL \
