@@ -4,6 +4,8 @@ Contains the tests for server.py
 import requests
 import server
 
+EOL = "\r\n"
+
 class FakeConnection(object):
     """
     A fake connection class that mimics a real TCP socket for the purpose
@@ -32,15 +34,6 @@ class FakeConnection(object):
         "closes connection?"
         self.is_closed = True
 
-def SendPost(url, payload):
-    """
-    Send a POST request to a given URL with a given payload
-    and return the response object. Just a wrapper to make it
-    easier to remember.
-    """
-    resp = requests.post(url, data=payload)
-    return resp
-
 # Test a basic GET call.
 
 def test_handle_connection():
@@ -48,8 +41,7 @@ def test_handle_connection():
     Test the function that handles connections by sending
     any request through it.
     """
-    conn = FakeConnection("GET / HTTP/1.1\r\n\r\n")
-    EOL = "\r\n"
+    conn = FakeConnection("GET / HTTP/1.1{0}{0}".format(EOL))
     expected_return = EOL.join(['HTTP/1.1 200 OK',
                     'Content-Type: text/html',
                     '',
@@ -64,6 +56,7 @@ def test_handle_connection():
                     '      <li><a href="/file">File</a></li>',
                     '      <li><a href="/image">Image</a></li>',
                     '      <li><a href="/form">Form</a></li>',
+                    '      <li><a href="/submit">Submit</a></li>',
                     '    </ul>',
                     '  </div>',
                     '</body>',
@@ -73,10 +66,13 @@ def test_handle_connection():
 
     assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
 
+#
+# 404 tests
+#
+
 def test_get_404():
     "Tests the GET method handler for 404 error"
-    conn = FakeConnection("GET /idontexist HTTP/1.1\r\n\r\n")
-    EOL = "\r\n"
+    conn = FakeConnection("GET /idontexist HTTP/1.1{0}{0}".format(EOL))
     expected_return = 'HTTP/1.1 404 Not Found{0}{0}'.format(EOL)
 
     server.handle_connection(conn)
@@ -86,18 +82,20 @@ def test_get_404():
 
 def test_head_404():
     "Tests the HEAD method handler for 404 error"
-    conn = FakeConnection("HEAD /idontexist HTTP/1.1\r\n\r\n")
-    EOL = "\r\n"
+    conn = FakeConnection("HEAD /idontexist HTTP/1.1{0}{0}".format(EOL))
     expected_return = 'HTTP/1.1 404 Not Found{0}{0}'.format(EOL)
 
     server.handle_connection(conn)
 
     assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
 
+#
+# GET method tests
+#
+
 def test_get_content():
     "Tests the GET method handler for /content"
-    conn = FakeConnection("GET /content HTTP/1.1\r\n\r\n")
-    EOL = "\r\n"
+    conn = FakeConnection("GET /content HTTP/1.1{0}{0}".format(EOL))
     expected_return = EOL.join(['HTTP/1.1 200 OK',
                     'Content-Type: text/html',
                     '',
@@ -114,8 +112,7 @@ def test_get_content():
 
 def test_get_image():
     "Tests the GET method handler for /image"
-    conn = FakeConnection("GET /image HTTP/1.1\r\n\r\n")
-    EOL = "\r\n"
+    conn = FakeConnection("GET /image HTTP/1.1{0}{0}".format(EOL))
     expected_return = EOL.join(['HTTP/1.1 200 OK',
                     'Content-Type: text/html',
                     '',
@@ -132,8 +129,7 @@ def test_get_image():
 
 def test_get_file():
     "Tests the GET method handler for /file"
-    conn = FakeConnection("GET /file HTTP/1.1\r\n\r\n")
-    EOL = "\r\n"
+    conn = FakeConnection("GET /file HTTP/1.1{0}{0}".format(EOL))
     expected_return = EOL.join(['HTTP/1.1 200 OK',
                     'Content-Type: text/html',
                     '',
@@ -150,8 +146,7 @@ def test_get_file():
 
 def test_get_form():
     "Tests the GET method handler for /form"
-    conn = FakeConnection("GET /form HTTP/1.1\r\n\r\n")
-    EOL = "\r\n"
+    conn = FakeConnection("GET /form HTTP/1.1{0}{0}".format(EOL))
     expected_return = EOL.join(['HTTP/1.1 200 OK',
                     'Content-Type: text/html',
                     '',
@@ -173,8 +168,7 @@ def test_get_form():
 
 def test_get_submit():
     "Tests the GET method handler for /submit"
-    conn = FakeConnection("GET /submit?firstname=Zerxes&lastname=WaffleHouse HTTP/1.1\r\n\r\n")
-    EOL = "\r\n"
+    conn = FakeConnection("GET /submit?firstname=Zerxes&lastname=WaffleHouse HTTP/1.1{0}{0}".format(EOL))
     expected_return = EOL.join(['HTTP/1.1 200 OK',
                     'Content-Type: text/html',
                     '',
@@ -189,10 +183,22 @@ def test_get_submit():
 
     assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
 
-def test_post():
-    "Tests the POST method handler"
-    conn = FakeConnection("POST / HTTP/1.1\r\n\r\n")
-    EOL = "\r\n"
+#
+# POST method tests
+#
+
+def test_post_index():
+    "Tests the the index for POST (405)"
+    conn = FakeConnection("POST / HTTP/1.1{0}{0}".format(EOL))
+    expected_return = "HTTP/1.1 405 Method Not Allowed{0}{0}".format(EOL)
+
+    server.handle_connection(conn)
+
+    assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
+
+def test_post_submit():
+    "Tests the POST method handler on /submit"
+    conn = FakeConnection("POST /submit HTTP/1.1{0}{0}".format(EOL))
     expected_return = EOL.join(['HTTP/1.1 200 OK',
                     'Content-Type: text/html',
                     '',
@@ -207,30 +213,61 @@ def test_post():
 
     assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
 
-def test_put():
-    "Tests the PUT method handler (405)"
-    conn = FakeConnection("PUT / HTTP/1.1\r\n\r\n")
-    EOL = "\r\n"
-    expected_return = "HTTP/1.1 405 Method Not Allowed" + EOL + EOL
+def test_post_form():
+    "Tests the POST method handler on /form"
+    conn = FakeConnection("POST /form HTTP/1.1{0}{0}".format(EOL))
+    expected_return = EOL.join(['HTTP/1.1 200 OK',
+                    'Content-Type: text/html',
+                    '',
+                    '<!DOCTYPE html>',
+                    '<html>',
+                    '<body>',
+                    '  <h1>Hello, world</h1> this is the form on fires&apos; Web server.',
+                    '  <form action="/submit" method="GET">',
+                    '    <input type="text" name="firstname" placeholder="First Name" required />',
+                    '    <input type="text" name="lastname" placeholder="Last Name" required /><br />',
+                    '    <input type="submit" value="Submit" />',
+                    '  </form>',
+                    '</body>',
+                    '</html>'])
 
     server.handle_connection(conn)
 
     assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
+
+#
+# PUT method tests
+#
+
+def test_put():
+    "Tests the PUT method handler (405)"
+    conn = FakeConnection("PUT / HTTP/1.1{0}{0}".format(EOL))
+    expected_return = "HTTP/1.1 405 Method Not Allowed{0}{0}".format(EOL)
+
+    server.handle_connection(conn)
+
+    assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
+
+#
+# DELETE method tests
+#
 
 def test_delete():
     "Tests the DELETE method handler (405)"
-    conn = FakeConnection("DELETE / HTTP/1.1\r\n\r\n")
-    EOL = "\r\n"
-    expected_return = "HTTP/1.1 405 Method Not Allowed" + EOL + EOL
+    conn = FakeConnection("DELETE / HTTP/1.1{0}{0}".format(EOL))
+    expected_return = "HTTP/1.1 405 Method Not Allowed{0}{0}".format(EOL)
 
     server.handle_connection(conn)
 
     assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
 
+#
+# HEAD method tests
+#
+
 def test_head():
     "Tests the HEAD method handler for /"
-    conn = FakeConnection("HEAD / HTTP/1.1\r\n\r\n")
-    EOL = "\r\n"
+    conn = FakeConnection("HEAD / HTTP/1.1{0}{0}".format(EOL))
     expected_return = "HTTP/1.1 200 OK" + EOL \
                     + "Content-Type: text/html" + EOL \
                     + EOL
@@ -241,8 +278,7 @@ def test_head():
 
 def test_head_content():
     "Tests the HEAD method handler for /content"
-    conn = FakeConnection("HEAD /content HTTP/1.1\r\n\r\n")
-    EOL = "\r\n"
+    conn = FakeConnection("HEAD /content HTTP/1.1{0}{0}".format(EOL))
     expected_return = "HTTP/1.1 200 OK" + EOL \
                     + "Content-Type: text/html" + EOL \
                     + EOL
@@ -253,8 +289,7 @@ def test_head_content():
 
 def test_head_file():
     "Tests the HEAD method handler for /file"
-    conn = FakeConnection("HEAD /file HTTP/1.1\r\n\r\n")
-    EOL = "\r\n"
+    conn = FakeConnection("HEAD /file HTTP/1.1{0}{0}".format(EOL))
     expected_return = "HTTP/1.1 200 OK" + EOL \
                     + "Content-Type: text/html" + EOL \
                     + EOL
@@ -265,8 +300,7 @@ def test_head_file():
 
 def test_head_submit():
     "Tests the HEAD method handler for /submit"
-    conn = FakeConnection("HEAD /submit HTTP/1.1\r\n\r\n")
-    EOL = "\r\n"
+    conn = FakeConnection("HEAD /submit HTTP/1.1{0}{0}".format(EOL))
     expected_return = "HTTP/1.1 200 OK" + EOL \
                     + "Content-Type: text/html" + EOL \
                     + EOL
@@ -277,8 +311,7 @@ def test_head_submit():
 
 def test_head_form():
     "Tests the HEAD method handler for /form"
-    conn = FakeConnection("HEAD /form HTTP/1.1\r\n\r\n")
-    EOL = "\r\n"
+    conn = FakeConnection("HEAD /form HTTP/1.1{0}{0}".format(EOL))
     expected_return = "HTTP/1.1 200 OK" + EOL \
                     + "Content-Type: text/html" + EOL \
                     + EOL
@@ -289,8 +322,7 @@ def test_head_form():
 
 def test_head_image():
     "Tests the HEAD method handler for /image"
-    conn = FakeConnection("HEAD /image HTTP/1.1\r\n\r\n")
-    EOL = "\r\n"
+    conn = FakeConnection("HEAD /image HTTP/1.1{0}{0}".format(EOL))
     expected_return = "HTTP/1.1 200 OK" + EOL \
                     + "Content-Type: text/html" + EOL \
                     + EOL
