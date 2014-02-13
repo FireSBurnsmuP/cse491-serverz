@@ -2,11 +2,12 @@
 """
 Main server file.
 """
-import random
 import socket
-import time
 from urlparse import urlparse
 from urlparse import parse_qs
+import jinja2
+import cgi
+from StringIO import StringIO
 
 
 EOL = "\r\n"
@@ -18,7 +19,8 @@ def main():
     sock = socket.socket()
     # Get local machine name
     host = socket.getfqdn()
-    port = random.randint(8000, 9999)
+    port = 9082
+    #port = random.randint(8000, 9999)
     # Bind to the port
     sock.bind((host, port))
     print 'Starting server on', host, port
@@ -36,139 +38,224 @@ def main():
 def handle_connection(conn):
     "Handles a given connection by sending the proper response"
 
-    request = conn.recv(1000)
-    # parse the request line
-    request = request.splitlines()
-    request_line = request[0].split()
-    r_type = request_line[0]
+    # First load the jinja template environment.
+    loader = jinja2.FileSystemLoader('./templates')
+    env = jinja2.Environment(loader=loader)
+
+    # Then get the request data and parse it.
+    request = read_request(conn)
 
     # find out which page they are accessing...
-    parsed = urlparse(request_line[1])
-    path = parsed.path.lower()
+    uri = urlparse(request['uri'])
+    path = uri.path.lower()
     if path in ('/', 'index'):
-        html_response = serve_index(r_type, request_line, request)
-    elif path in ('/content'):
-        html_response = serve_content(r_type, request_line, request)
-    elif path in ('/file'):
-        html_response = serve_file(r_type, request_line, request)
-    elif path in ('/image'):
-        html_response = serve_image(r_type, request_line, request)
-    elif path in ('/form'):
-        html_response = serve_form(r_type, request_line, request)
-    elif path in ('/submit'):
-        html_response = serve_submit(r_type, request_line, request)
+        html_response = serve_index(request, env)
+    elif path == '/content':
+        html_response = serve_content(request, env)
+    elif path == '/file':
+        html_response = serve_file(request, env)
+    elif path == '/image':
+        html_response = serve_image(request, env)
+    elif path == '/form':
+        html_response = serve_form(request, env)
+    elif path == '/submit':
+        html_response = serve_submit(request, env)
     else:
         # This is not the page you are looking for...
-        html_response = 'HTTP/1.1 404 Not Found{0}{0}'.format(EOL)
+        html_response = serve_404(request, env)
 
     conn.send(html_response)
     conn.close()
 
-def serve_index(r_type, request_line, request):
+def read_request(conn):
+    """
+    Reads and parses the request sent by the client,
+    and returns the resulting request as a dictionary.
+    The returned dictionary will be of the format:
+    {
+        'method': (request method),
+        'uri': (requested uri),
+        'protocol': (protocol (most likely HTTP)),
+        'protocol_version': (version of that protocol),
+        'headers': {
+            (headers go in this sub-dictionary, if present,
+                otherwise this is empty.)
+        },
+        'content': {
+            (content goes in here, if it exists,
+                otherwise this is empty.)
+        }
+    }
+    """
+
+    # Grab the headers from the connection socket
+    temp = ''
+    while '\r\n\r\n' not in temp:
+        temp += conn.recv(1)
+    request = temp.rstrip().split(EOL)
+
+    # Pull/parse the request line...
+    temp = request[0].split()
+    request_line = {}
+    request_line['method'] = temp[0]
+    request_line['uri'] = temp[1]
+    temp = temp[2].split('/')
+    request_line['protocol'] = temp[0]
+    request_line['version'] = temp[1]
+
+    # ... and headers...
+    # For this I must remove the request line
+    request = request[1:len(request)]
+    headers = {}
+    for line in request:
+        key, value = line.split(': ', 1)
+        headers[key.lower()] = value
+    # ... and content (if it exists)
+    if 'content-length' in headers:
+        content = conn.recv(int(headers['content-length']))
+        if 'content-type' in headers:
+            if 'application/x-www-form-urlencoded' in headers['content-type']:
+                # form encoding's easy: just parse the query string...
+                temp = parse_qs(content)
+                # reset content to a dictionary
+                content = {}
+                # ... and store in my dictionary.
+                for key in temp:
+                    content[key.lower()] = temp[key][0]
+            elif 'multipart/form-data' in headers['content-type']:
+                # Multipart's a bit trickier: going cgi on this one.
+                # Init the field storage...
+                temp = cgi.FieldStorage(
+                    headers=headers, fp=StringIO(content),
+                    environ={'REQUEST_METHOD' : 'POST'}
+                )
+                # ... reset content to a dictionary...
+                content = {}
+                # ... and then parse all keys, values into content.
+                for key in temp:
+                    content[key] = temp[key].value
+            else:
+                # TODO do something with other types
+                # reset content to a dictionary
+                content = {}
+        else:
+            # TODO is there a default content-type, assuming length is given?
+            content = {}
+    elif 'content-type' in headers:
+        # in this case, I may have a complicated situation wherein
+        # I need to actually determine the length manually.
+        # TODO manual length determination, if possible.
+        content = {}
+    else:
+        # empty content
+        content = {}
+
+    # Now to put it all together in one request object:
+    request = {
+        'method': request_line['method'],
+        'uri': request_line['uri'],
+        'protocol': request_line['protocol'],
+        'protocol_version': request_line['version'],
+        'headers': headers,
+        'content': content
+    }
+    return request
+
+def serve_index(request, env):
     """
     Processes a request for the index of the site.
     This page supports GET and HEAD requests,
     all others are met with a 405.
     """
-    if r_type == 'GET':
-        html_response = EOL.join(['HTTP/1.1 200 OK',
-                    'Content-Type: text/html',
-                    '',
-                    '<!DOCTYPE html>',
-                    '<html>',
-                    '<body>',
-                    '  <h1>Hello, world</h1> this is fires&apos; Web server.',
-                    '  <h3>Links:</h3>',
-                    '  <div style="padding-left: 1.0em;">',
-                    '    <ul>',
-                    '      <li><a href="/content">Content</a></li>',
-                    '      <li><a href="/file">File</a></li>',
-                    '      <li><a href="/image">Image</a></li>',
-                    '      <li><a href="/form">Form</a></li>',
-                    '      <li><a href="/submit">Submit</a></li>',
-                    '    </ul>',
-                    '  </div>',
-                    '</body>',
-                    '</html>'])
-    elif r_type == 'HEAD':
+    if request['method'] == 'GET':
+        html_response = EOL.join([
+            'HTTP/1.1 200 OK',
+            'Content-Type: text/html',
+            '',
+            env.get_template("index.html").render()
+        ])
+    elif request['method'] == 'HEAD':
         html_response = 'HTTP/1.1 200 OK{0}Content-Type: text/html{0}{0}'.format(EOL)
     else:
         html_response = 'HTTP/1.1 405 Method Not Allowed{0}{0}'.format(EOL)
     return html_response
 
-def serve_content(r_type, request_line, request):
+def serve_content(request, env):
     """
     Processes a request for the content page.
     This page supports GET and HEAD requests,
     all others are met with a 405.
     """
-    if r_type == 'GET':
+    if request['method'] == 'GET':
         html_response = EOL.join(['HTTP/1.1 200 OK',
                     'Content-Type: text/html',
                     '',
                     '<!DOCTYPE html>',
                     '<html>',
                     '<body>',
-                    '  <h1>Hello, world</h1> this is the content on fires&apos; Web server.',
+                    '  <h1>Hello, world</h1>',
+                    '  this is the content on fires&apos; Web server.',
                     '</body>',
                     '</html>'])
-    elif r_type == 'HEAD':
+    elif request['method'] == 'HEAD':
         html_response = 'HTTP/1.1 200 OK{0}Content-Type: text/html{0}{0}'.format(EOL)
     else:
         html_response = 'HTTP/1.1 405 Method Not Allowed{0}{0}'.format(EOL)
     return html_response
 
-def serve_file(r_type, request_line, request):
+def serve_file(request, env):
     """
     Processes a request for the file.
     This page supports GET and HEAD requests,
     all others are met with a 405.
     """
-    if r_type == 'GET':
+    if request['method'] == 'GET':
         html_response = EOL.join(['HTTP/1.1 200 OK',
                 'Content-Type: text/html',
                 '',
                 '<!DOCTYPE html>',
                 '<html>',
                 '<body>',
-                '  <h1>Hello, world</h1> this is the file on fires&apos; Web server.',
+                '  <h1>Hello, world</h1>',
+                '  this is the file on fires&apos; Web server.',
                 '</body>',
                 '</html>'])
-    elif r_type == 'HEAD':
+    elif request['method'] == 'HEAD':
         html_response = 'HTTP/1.1 200 OK{0}Content-Type: text/html{0}{0}'.format(EOL)
     else:
         html_response = 'HTTP/1.1 405 Method Not Allowed{0}{0}'.format(EOL)
     return html_response
 
-def serve_image(r_type, request_line, request):
+def serve_image(request, env):
     """
     Processes a request for the image.
     This page supports GET and HEAD requests,
     all others are met with a 405.
     """
-    if r_type == 'GET':
+    if request['method'] == 'GET':
         html_response = EOL.join(['HTTP/1.1 200 OK',
                 'Content-Type: text/html',
                 '',
                 '<!DOCTYPE html>',
                 '<html>',
                 '<body>',
-                '  <h1>Hello, world</h1> this is the image on fires&apos; Web server.',
+                '  <h1>Hello, world</h1>',
+                '  this is the image on fires&apos; Web server.',
                 '</body>',
                 '</html>'])
-    elif r_type == 'HEAD':
+    elif request['method'] == 'HEAD':
         html_response = 'HTTP/1.1 200 OK{0}Content-Type: text/html{0}{0}'.format(EOL)
     else:
         html_response = 'HTTP/1.1 405 Method Not Allowed{0}{0}'.format(EOL)
     return html_response
 
-def serve_form(r_type, request_line, request):
+def serve_form(request, env):
     """
     Processes a request for the form page.
-    This page supports GET, POST, and HEAD requests,
+    This page supports GET, and HEAD requests,
     all others are met with a 405.
     """
-    if r_type == 'GET':
+    if request['method'] == 'GET':
         html_response = EOL.join(['HTTP/1.1 200 OK',
                 'Content-Type: text/html',
                 '',
@@ -177,69 +264,73 @@ def serve_form(r_type, request_line, request):
                 '<body>',
                 '  <h1>Hello, world</h1> this is the form on fires&apos; Web server.',
                 '  <form action="/submit" method="GET">',
+                '    <h3>GET form</h3>',
                 '    <input type="text" name="firstname" placeholder="First Name" required />',
                 '    <input type="text" name="lastname" placeholder="Last Name" required /><br />',
                 '    <input type="submit" value="Submit" />',
                 '  </form>',
-                '</body>',
-                '</html>'])
-    elif r_type == 'POST':
-        # TODO Check 2 different Content-Types
-        html_response = EOL.join(['HTTP/1.1 200 OK',
-                'Content-Type: text/html',
-                '',
-                '<!DOCTYPE html>',
-                '<html>',
-                '<body>',
-                '  <h1>Hello, world</h1> this is the form on fires&apos; Web server.',
-                '  <form action="/submit" method="GET">',
+                '  <form action="/submit" method="POST">',
+                '    <h3>POST form</h3>',
                 '    <input type="text" name="firstname" placeholder="First Name" required />',
                 '    <input type="text" name="lastname" placeholder="Last Name" required /><br />',
                 '    <input type="submit" value="Submit" />',
                 '  </form>',
+                '  <form action="/submit" method="POST" enctype="multipart/form-data">',
+                '    <h3>POST form (as multipart/form-data)</h3>',
+                '    <input type="text" name="firstname" placeholder="First Name" required />',
+                '    <input type="text" name="lastname" placeholder="Last Name" required /><br />',
+                '    <input type="submit" value="Submit" />',
                 '</body>',
                 '</html>'])
-    elif r_type == 'HEAD':
+    elif request['method'] == 'HEAD':
         html_response = 'HTTP/1.1 200 OK{0}Content-Type: text/html{0}{0}'.format(EOL)
     else:
         html_response = 'HTTP/1.1 405 Method Not Allowed{0}{0}'.format(EOL)
     return html_response
 
-def serve_submit(r_type, request_line, request):
+def serve_submit(request, env):
     """
     Processes a request for the submit page
     This page supports GET, POST and HEAD requests,
     all others are met with a 405.
     """
-    # Okay, now to parse out the form variables
-    parsed = urlparse(request_line[1])
-    query = parse_qs(parsed.query)
-    if r_type == 'GET':
-        html_response = EOL.join(['HTTP/1.1 200 OK',
-                'Content-Type: text/html',
-                '',
-                '<!DOCTYPE html>',
-                '<html>',
-                '<body>',
-                '  <h1>Hello Mr. {} {}.</h1>'.format(query["firstname"][0],
-                    query["lastname"][0]),
-                '</body>',
-                '</html>'])
-    elif r_type == 'POST':
-        # TODO Check 2 different Content-Types
-        html_response = EOL.join(['HTTP/1.1 200 OK',
-                'Content-Type: text/html',
-                '',
-                '<!DOCTYPE html>',
-                '<html>',
-                '<body>',
-                '  <h1>Hello, world</h1> you&apos;ve attempted to POST to fires&apos; Web server.',
-                '</body>',
-                '</html>'])
-    elif r_type == 'HEAD':
+    uri = urlparse(request['uri'])
+
+    if request['method'] == 'GET':
+        query = parse_qs(uri.query)
+        html_response = EOL.join([
+            'HTTP/1.1 200 OK',
+            'Content-Type: text/html',
+            '',
+            env.get_template("submit.html").render({
+                'firstname': query['firstname'][0],
+                'lastname': query['lastname'][0]
+            })
+        ])
+    elif request['method'] == 'POST':
+        html_response = EOL.join([
+            'HTTP/1.1 200 OK',
+            'Content-Type: text/html',
+            '',
+            env.get_template("submit.html").render({
+                'firstname': request['content']['firstname'],
+                'lastname': request['content']['lastname']
+            })
+        ])
+    elif request['method'] == 'HEAD':
         html_response = 'HTTP/1.1 200 OK{0}Content-Type: text/html{0}{0}'.format(EOL)
     else:
         html_response = 'HTTP/1.1 405 Method Not Allowed{0}{0}'.format(EOL)
+    return html_response
+
+def serve_404(request, env):
+    "Processes a request for something that doesn't exist."
+    html_response = EOL.join([
+        'HTTP/1.1 404 Not Found',
+        'Content-Type: text/html',
+        '',
+        env.get_template("404.html").render()
+    ])
     return html_response
 
 if __name__ == '__main__':

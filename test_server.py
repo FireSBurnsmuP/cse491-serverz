@@ -2,7 +2,7 @@
 Contains the tests for server.py
 """
 import requests
-import server
+from . import server
 
 EOL = "\r\n"
 
@@ -155,6 +155,19 @@ def test_get_form():
                     '<body>',
                     '  <h1>Hello, world</h1> this is the form on fires&apos; Web server.',
                     '  <form action="/submit" method="GET">',
+                    '    <h3>GET form</h3>',
+                    '    <input type="text" name="firstname" placeholder="First Name" required />',
+                    '    <input type="text" name="lastname" placeholder="Last Name" required /><br />',
+                    '    <input type="submit" value="Submit" />',
+                    '  </form>',
+                    '  <form action="/submit" method="POST">',
+                    '    <h3>POST form</h3>',
+                    '    <input type="text" name="firstname" placeholder="First Name" required />',
+                    '    <input type="text" name="lastname" placeholder="Last Name" required /><br />',
+                    '    <input type="submit" value="Submit" />',
+                    '  </form>',
+                    '  <form action="/submit" method="POST" enctype="multipart/form-data">',
+                    '    <h3>POST form (as multipart/form-data)</h3>',
                     '    <input type="text" name="firstname" placeholder="First Name" required />',
                     '    <input type="text" name="lastname" placeholder="Last Name" required /><br />',
                     '    <input type="submit" value="Submit" />',
@@ -206,28 +219,6 @@ def test_post_submit():
                     '<html>',
                     '<body>',
                     '  <h1>Hello, world</h1> you&apos;ve attempted to POST to fires&apos; Web server.',
-                    '</body>',
-                    '</html>'])
-
-    server.handle_connection(conn)
-
-    assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
-
-def test_post_form():
-    "Tests the POST method handler on /form"
-    conn = FakeConnection("POST /form HTTP/1.1{0}{0}".format(EOL))
-    expected_return = EOL.join(['HTTP/1.1 200 OK',
-                    'Content-Type: text/html',
-                    '',
-                    '<!DOCTYPE html>',
-                    '<html>',
-                    '<body>',
-                    '  <h1>Hello, world</h1> this is the form on fires&apos; Web server.',
-                    '  <form action="/submit" method="GET">',
-                    '    <input type="text" name="firstname" placeholder="First Name" required />',
-                    '    <input type="text" name="lastname" placeholder="Last Name" required /><br />',
-                    '    <input type="submit" value="Submit" />',
-                    '  </form>',
                     '</body>',
                     '</html>'])
 
