@@ -37,3 +37,8 @@
  * optimization of string concats all around
  * PEP8 style conformity now confirmed (yay pylint)
  ** TODO ** add tests for new functionality
+
+2014-02-14
+
+ * Updated tests for everything but actually sending POSTs out.
+ * 405 is broken, if I want anything other than 'Allow: GET, HEAD', anyway.

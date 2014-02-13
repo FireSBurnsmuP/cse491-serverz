@@ -2,6 +2,7 @@
 """
 Main server file.
 """
+import random
 import socket
 from urlparse import urlparse
 from urlparse import parse_qs
@@ -19,8 +20,11 @@ def main():
     sock = socket.socket()
     # Get local machine name
     host = socket.getfqdn()
-    port = 9082
-    #port = random.randint(8000, 9999)
+    if host == 'magrathea':
+        # For testing, I don't want to have to change my url all the damn time.
+        port = 8080
+    else:
+        port = random.randint(8000, 9999)
     # Bind to the port
     sock.bind((host, port))
     print 'Starting server on', host, port
@@ -39,8 +43,7 @@ def handle_connection(conn):
     "Handles a given connection by sending the proper response"
 
     # First load the jinja template environment.
-    loader = jinja2.FileSystemLoader('./templates')
-    env = jinja2.Environment(loader=loader)
+    env = jinja2.Environment(loader=jinja2.FileSystemLoader('./templates'))
 
     # Then get the request data and parse it.
     request = read_request(conn)
@@ -318,7 +321,8 @@ def serve_submit(request, env):
             ''
         ])
     else:
-        html_response = serve_405(request, env, ['GET', 'POST', 'HEAD'])
+        allowed = ['GET', 'POST', 'HEAD']
+        html_response = serve_405(request, env, allowed)
     return html_response
 
 def serve_404(request, env):
@@ -349,9 +353,11 @@ def serve_405(request, env, allowed=None):
     Default for 'allowed' is ['GET', 'HEAD'], what most things
     allow.
     """
+    if allowed is None:
+        allowed = ['GET', 'HEAD']
     html_response = EOL.join([
         'HTTP/1.1 405 Method Not Allowed',
-        'Allow: {}'.format(', '.join(allowed or ['GET', 'HEAD'])),
+        'Allow: {}'.format(', '.join(allowed)),
         ''
     ])
     return html_response
