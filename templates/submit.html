@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}Now I know who you are...{% endblock %}
+
+{% block content %}
+
+    <h1>Hello, {{ firstname|striptags|title }} {{ lastname|striptags|title }}.</h1>
+    <p>
+        Now I know who you are, for this precise instance.<br />
+        Don&apos;t worry; I'm not good with names (or logging server activity).
+    </p>
+
+{% endblock %}

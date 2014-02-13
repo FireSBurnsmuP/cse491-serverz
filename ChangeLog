@@ -23,4 +23,26 @@
 
 2014-01-30  Chris Thomas
 
- * added for and submit, did optimizing, and added new tests
+ * added form and submit, did optimizing, and added new tests
+
+2014-02-04 - 2014-02-14 Chris Thomas
+
+ * HW4 changes
+ * Added templating (finally!)
+ * Reoptimized request handling and parsing, all parsed into one dict now
+   so that's nice.
+ * POST now actually works, with both types
+ * 404 now has a page
+ * 405 handling now follows spec and sends 'Allow: [...]' header
+ * optimization of string concats all around
+ * PEP8 style conformity now confirmed (yay pylint)
+ ** TODO ** add tests for new functionality
+
+2014-02-14
+
+ * Updated tests for everything but actually sending multipart POSTs out.
+   Still working on figuring that one out.
+ * 405 is broken, if I want anything other than 'Allow: GET, HEAD', anyway,
+   and for no obvous reason.
+ * Calling HW4 done, a week late, with no progress on hw5, and taking time off
+   work. Hooray, computer science... >.<
