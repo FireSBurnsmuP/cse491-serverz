@@ -1,13 +1,27 @@
 {% extends "base.html" %}
 
+{% block title %}Fires' Form - To whom do I speak?{% endblock %}
+
 {% block content %}
 
-<form action='/submit' method='POST' enctype='multipart/form-data'>
-First name:
-<input type='text' name='firstname'>
-Last name:
-<input type='text' name='lastname'>
-<input type='submit'>
-</form>
+    <h1>Hello, world</h1> this is the form on fires&apos; Web server.
+    <form action="/submit" method="GET">
+        <h3>GET form</h3>
+        <input type="text" name="firstname" placeholder="First Name" required />
+        <input type="text" name="lastname" placeholder="Last Name" required /><br />
+        <input type="submit" value="Submit" />
+    </form>
+    <form action="/submit" method="POST">
+        <h3>POST form</h3>
+        <input type="text" name="firstname" placeholder="First Name" required />
+        <input type="text" name="lastname" placeholder="Last Name" required /><br />
+        <input type="submit" value="Submit" />
+    </form>
+    <form action="/submit" method="POST" enctype="multipart/form-data">
+        <h3>POST form (as multipart/form-data)</h3>
+        <input type="text" name="firstname" placeholder="First Name" required />
+        <input type="text" name="lastname" placeholder="Last Name" required /><br />
+        <input type="submit" value="Submit" />
+    </form>
 
 {% endblock  %}

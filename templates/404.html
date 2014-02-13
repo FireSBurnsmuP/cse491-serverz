@@ -3,32 +3,32 @@
 {% block title %}Obiwan says...{% endblock %}
 
 {% block head_add %}
-<noscript>
-<meta http-equiv="refresh" content="10; url=/">
-</noscript>
-<script>
-<!--
-/* redirect the user after a timeout of 10sec */
-setTimeout(function () {
-    window.location.href="/";
-}, 10000);
--->
-</script>
+    <noscript>
+    <meta http-equiv="refresh" content="10; url=/">
+    </noscript>
+    <script>
+    <!--
+    /* redirect the user after a timeout of 10sec */
+    setTimeout(function () {
+        window.location.href="/";
+    }, 10000);
+    -->
+    </script>
 {% endblock %}
 
 {% block content %}
-<h1>This is not the page you are looking for...</h1>
-<h3>Move along... Move along...</h3>
-<p>
-    The page you are looking for doesn't exist on my web server.
-</p>
-<p>
-    Maybe you've mistyped something, or perhaps you followed a broken link or
-    outdated bookmark. If either of these is the case, please contact me.
-</p>
-<p>
-    In any case, I'm moving you along now. If your browser doesn't redirect you
-    within 10 seconds, please, <a href="/">Click Here</a> to go back to the
-    index of the server.
-</p>
+    <h1>This is not the page you are looking for...</h1>
+    <h3>Move along... Move along...</h3>
+    <p>
+        The page you are looking for doesn't exist on my web server.
+    </p>
+    <p>
+        Maybe you've mistyped something, or perhaps you followed a broken link or
+        outdated bookmark. If either of these is the case, please contact me.
+    </p>
+    <p>
+        In any case, I'm moving you along now. If your browser doesn't redirect you
+        within 10 seconds, please, <a href="/">Click Here</a> to go back to the
+        index of the server.
+    </p>
 {% endblock %}

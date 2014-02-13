@@ -167,6 +167,7 @@ def serve_index(request, env):
     This page supports GET and HEAD requests,
     all others are met with a 405.
     """
+
     if request['method'] == 'GET':
         html_response = EOL.join([
             'HTTP/1.1 200 OK',
@@ -175,9 +176,13 @@ def serve_index(request, env):
             env.get_template("index.html").render()
         ])
     elif request['method'] == 'HEAD':
-        html_response = 'HTTP/1.1 200 OK{0}Content-Type: text/html{0}{0}'.format(EOL)
+        html_response = EOL.join([
+            'HTTP/1.1 200 OK',
+            'Content-Type: text/html',
+            ''
+        ])
     else:
-        html_response = 'HTTP/1.1 405 Method Not Allowed{0}{0}'.format(EOL)
+        html_response = serve_405(request, env)
     return html_response
 
 def serve_content(request, env):
@@ -186,21 +191,22 @@ def serve_content(request, env):
     This page supports GET and HEAD requests,
     all others are met with a 405.
     """
+
     if request['method'] == 'GET':
-        html_response = EOL.join(['HTTP/1.1 200 OK',
-                    'Content-Type: text/html',
-                    '',
-                    '<!DOCTYPE html>',
-                    '<html>',
-                    '<body>',
-                    '  <h1>Hello, world</h1>',
-                    '  this is the content on fires&apos; Web server.',
-                    '</body>',
-                    '</html>'])
+        html_response = EOL.join([
+            'HTTP/1.1 200 OK',
+            'Content-Type: text/html',
+            '',
+            env.get_template("content.html").render()
+        ])
     elif request['method'] == 'HEAD':
-        html_response = 'HTTP/1.1 200 OK{0}Content-Type: text/html{0}{0}'.format(EOL)
+        html_response = EOL.join([
+            'HTTP/1.1 200 OK',
+            'Content-Type: text/html',
+            ''
+        ])
     else:
-        html_response = 'HTTP/1.1 405 Method Not Allowed{0}{0}'.format(EOL)
+        html_response = serve_405(request, env)
     return html_response
 
 def serve_file(request, env):
@@ -209,21 +215,22 @@ def serve_file(request, env):
     This page supports GET and HEAD requests,
     all others are met with a 405.
     """
+
     if request['method'] == 'GET':
-        html_response = EOL.join(['HTTP/1.1 200 OK',
-                'Content-Type: text/html',
-                '',
-                '<!DOCTYPE html>',
-                '<html>',
-                '<body>',
-                '  <h1>Hello, world</h1>',
-                '  this is the file on fires&apos; Web server.',
-                '</body>',
-                '</html>'])
+        html_response = EOL.join([
+            'HTTP/1.1 200 OK',
+            'Content-Type: text/html',
+            '',
+            env.get_template("file.html").render()
+        ])
     elif request['method'] == 'HEAD':
-        html_response = 'HTTP/1.1 200 OK{0}Content-Type: text/html{0}{0}'.format(EOL)
+        html_response = EOL.join([
+            'HTTP/1.1 200 OK',
+            'Content-Type: text/html',
+            ''
+        ])
     else:
-        html_response = 'HTTP/1.1 405 Method Not Allowed{0}{0}'.format(EOL)
+        html_response = serve_405(request, env)
     return html_response
 
 def serve_image(request, env):
@@ -232,21 +239,22 @@ def serve_image(request, env):
     This page supports GET and HEAD requests,
     all others are met with a 405.
     """
+
     if request['method'] == 'GET':
-        html_response = EOL.join(['HTTP/1.1 200 OK',
-                'Content-Type: text/html',
-                '',
-                '<!DOCTYPE html>',
-                '<html>',
-                '<body>',
-                '  <h1>Hello, world</h1>',
-                '  this is the image on fires&apos; Web server.',
-                '</body>',
-                '</html>'])
+        html_response = EOL.join([
+            'HTTP/1.1 200 OK',
+            'Content-Type: text/html',
+            '',
+            env.get_template("image.html").render()
+        ])
     elif request['method'] == 'HEAD':
-        html_response = 'HTTP/1.1 200 OK{0}Content-Type: text/html{0}{0}'.format(EOL)
+        html_response = EOL.join([
+            'HTTP/1.1 200 OK',
+            'Content-Type: text/html',
+            ''
+        ])
     else:
-        html_response = 'HTTP/1.1 405 Method Not Allowed{0}{0}'.format(EOL)
+        html_response = serve_405(request, env)
     return html_response
 
 def serve_form(request, env):
@@ -255,37 +263,22 @@ def serve_form(request, env):
     This page supports GET, and HEAD requests,
     all others are met with a 405.
     """
+
     if request['method'] == 'GET':
-        html_response = EOL.join(['HTTP/1.1 200 OK',
-                'Content-Type: text/html',
-                '',
-                '<!DOCTYPE html>',
-                '<html>',
-                '<body>',
-                '  <h1>Hello, world</h1> this is the form on fires&apos; Web server.',
-                '  <form action="/submit" method="GET">',
-                '    <h3>GET form</h3>',
-                '    <input type="text" name="firstname" placeholder="First Name" required />',
-                '    <input type="text" name="lastname" placeholder="Last Name" required /><br />',
-                '    <input type="submit" value="Submit" />',
-                '  </form>',
-                '  <form action="/submit" method="POST">',
-                '    <h3>POST form</h3>',
-                '    <input type="text" name="firstname" placeholder="First Name" required />',
-                '    <input type="text" name="lastname" placeholder="Last Name" required /><br />',
-                '    <input type="submit" value="Submit" />',
-                '  </form>',
-                '  <form action="/submit" method="POST" enctype="multipart/form-data">',
-                '    <h3>POST form (as multipart/form-data)</h3>',
-                '    <input type="text" name="firstname" placeholder="First Name" required />',
-                '    <input type="text" name="lastname" placeholder="Last Name" required /><br />',
-                '    <input type="submit" value="Submit" />',
-                '</body>',
-                '</html>'])
+        html_response = EOL.join([
+            'HTTP/1.1 200 OK',
+            'Content-Type: text/html',
+            '',
+            env.get_template("form.html").render()
+        ])
     elif request['method'] == 'HEAD':
-        html_response = 'HTTP/1.1 200 OK{0}Content-Type: text/html{0}{0}'.format(EOL)
+        html_response = EOL.join([
+            'HTTP/1.1 200 OK',
+            'Content-Type: text/html',
+            ''
+        ])
     else:
-        html_response = 'HTTP/1.1 405 Method Not Allowed{0}{0}'.format(EOL)
+        html_response = serve_405(request, env)
     return html_response
 
 def serve_submit(request, env):
@@ -294,6 +287,7 @@ def serve_submit(request, env):
     This page supports GET, POST and HEAD requests,
     all others are met with a 405.
     """
+
     uri = urlparse(request['uri'])
 
     if request['method'] == 'GET':
@@ -318,18 +312,47 @@ def serve_submit(request, env):
             })
         ])
     elif request['method'] == 'HEAD':
-        html_response = 'HTTP/1.1 200 OK{0}Content-Type: text/html{0}{0}'.format(EOL)
+        html_response = EOL.join([
+            'HTTP/1.1 200 OK',
+            'Content-Type: text/html',
+            ''
+        ])
     else:
-        html_response = 'HTTP/1.1 405 Method Not Allowed{0}{0}'.format(EOL)
+        html_response = serve_405(request, env, ['GET', 'POST', 'HEAD'])
     return html_response
 
 def serve_404(request, env):
     "Processes a request for something that doesn't exist."
+
+    if request['method'] == 'HEAD':
+        # Just send the headers for my 404 page.
+        html_response = EOL.join([
+            'HTTP/1.1 404 Not Found',
+            'Content-Type: text/html',
+            ''
+        ])
+    else:
+        # Actually send the 404 page.
+        html_response = EOL.join([
+            'HTTP/1.1 404 Not Found',
+            'Content-Type: text/html',
+            '',
+            env.get_template("404.html").render()
+        ])
+    return html_response
+
+def serve_405(request, env, allowed=None):
+    """
+    Processes a request for a resource to which the client
+    has requested a method I don't support, including sending
+    a list of supported formats.
+    Default for 'allowed' is ['GET', 'HEAD'], what most things
+    allow.
+    """
     html_response = EOL.join([
-        'HTTP/1.1 404 Not Found',
-        'Content-Type: text/html',
-        '',
-        env.get_template("404.html").render()
+        'HTTP/1.1 405 Method Not Allowed',
+        'Allow: {}'.format(', '.join(allowed or ['GET', 'HEAD'])),
+        ''
     ])
     return html_response
 

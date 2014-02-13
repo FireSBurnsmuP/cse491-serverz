@@ -4,6 +4,13 @@
 
 {% block content %}
 
-<h1>Hello, {{ firstname|striptags|title }} {{ lastname|striptags|title }}.</h1>
+    <h1>Hello, {{ firstname|striptags|title }} {{ lastname|striptags|title }}.</h1>
+    <p>
+        Now I know who you are, for this precise instance.
+        It's really a shame that this server doesn't do logging yet, because
+        I&apos;m likely to have already forgotten your name by the time you read
+        this.<br />
+        Not lke that's any different from real life...
+    </p>
 
 {% endblock %}
