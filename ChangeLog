@@ -40,5 +40,9 @@
 
 2014-02-14
 
- * Updated tests for everything but actually sending POSTs out.
- * 405 is broken, if I want anything other than 'Allow: GET, HEAD', anyway.
+ * Updated tests for everything but actually sending multipart POSTs out.
+   Still working on figuring that one out.
+ * 405 is broken, if I want anything other than 'Allow: GET, HEAD', anyway,
+   and for no obvous reason.
+ * Calling HW4 done, a week late, with no progress on hw5, and taking time off
+   work. Hooray, computer science... >.<

@@ -321,8 +321,7 @@ def serve_submit(request, env):
             ''
         ])
     else:
-        allowed = ['GET', 'POST', 'HEAD']
-        html_response = serve_405(request, env, allowed)
+        html_response = serve_405(request, env, allowed=['GET', 'POST', 'HEAD'])
     return html_response
 
 def serve_404(request, env):
@@ -357,7 +356,7 @@ def serve_405(request, env, allowed=None):
         allowed = ['GET', 'HEAD']
     html_response = EOL.join([
         'HTTP/1.1 405 Method Not Allowed',
-        'Allow: {}'.format(', '.join(allowed)),
+        'Allow: {0}'.format(', '.join(allowed)),
         ''
     ])
     return html_response

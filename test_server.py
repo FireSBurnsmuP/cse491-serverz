@@ -142,9 +142,15 @@ def test_post_index():
     assert conn.sent == expected_return, 'Got: {0},\nExpected: {1}'.format(conn.sent, expected_return)
 
 def test_post_submit_form_enc():
-    "Tests the POST method handler on /submit"
-    # TODO FIXME make me work with actual post-data
-    conn = FakeConnection("POST /submit HTTP/1.1{0}{0}".format(EOL))
+    "Tests the POST (x-www-form-urlencoded) handler on /submit"
+    conn = FakeConnection(EOL.join([
+        'POST /submit HTTP/1.1',
+        'Content-Length: 37',
+        'Content-Type: application/x-www-form-urlencoded',
+        '',
+        'firstname=Zerxes&lastname=Wafflehouse'
+        ])
+    )
     expected_in_return = '<h1>Hello, Zerxes Wafflehouse.</h1>'
 
     server.handle_connection(conn)
@@ -152,9 +158,13 @@ def test_post_submit_form_enc():
     assert expected_in_return in conn.sent, 'Got: {0},\nExpected: {1}'.format(conn.sent, expected_in_return)
 
 def test_post_submit_multipart():
-    "Tests the POST method handler on /submit"
+    "Tests the POST (multipart/form-data) handler on /submit"
     # TODO FIXME make me work with actual post-data
-    conn = FakeConnection("POST /submit HTTP/1.1{0}{0}".format(EOL))
+    conn = requests.post('/submit', data={
+            'firstname': 'Zerxes',
+            'lastname': 'Wafflehouse'
+        }
+    )
     expected_in_return = '<h1>Hello, Zerxes Wafflehouse.</h1>'
 
     server.handle_connection(conn)
