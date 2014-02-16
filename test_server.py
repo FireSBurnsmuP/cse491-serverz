@@ -159,7 +159,7 @@ def test_post_submit_form_enc():
 
 def test_post_submit_multipart():
     "Tests the POST (multipart/form-data) handler on /submit"
-    # TODO FIXME make me work with actual post-data
+    # TODO FIXME
     conn = requests.post('/submit', data={
             'firstname': 'Zerxes',
             'lastname': 'Wafflehouse'
@@ -190,7 +190,7 @@ def test_put_index():
 
 def test_put_submit():
     "Tests the PUT method handler for the submit(405)"
-    conn = FakeConnection("PUT / HTTP/1.1{0}{0}".format(EOL))
+    conn = FakeConnection("PUT /submit HTTP/1.1{0}{0}".format(EOL))
     expected_return = EOL.join([
         'HTTP/1.1 405 Method Not Allowed',
         'Allow: GET, POST, HEAD',
