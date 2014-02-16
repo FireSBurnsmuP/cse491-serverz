@@ -97,8 +97,8 @@ def read_request(conn):
     """
 
     # Grab the headers from the connection socket
-    temp = ''
-    while temp[-4:] != '{}{}'.format(CRLF):
+    temp = conn.recv(1)
+    while temp[-4:] != CRLF * 2:
         temp += conn.recv(1)
     request = temp.rstrip().split(CRLF)
 
@@ -113,7 +113,7 @@ def read_request(conn):
     # ... parse the query string into a dict...
     request_line['query'] = {}
     if request_line['query_string']:
-        temp = parse_qs(request_line['query_string'])
+        temp = parse_qs(request_line['query_string']).iteritems()
         request_line['query'] = {
             key : val[0]
             for key, val in temp
@@ -146,7 +146,7 @@ def read_request(conn):
                 _input = StringIO(content)
                 temp = cgi.FieldStorage(
                     headers=headers, fp=_input,
-                    jinjairon={'REQUEST_METHOD' : 'POST'}
+                    environ={'REQUEST_METHOD' : 'POST'}
                 )
                 # ... reset content to a dictionary...
                 content = {}
@@ -177,8 +177,12 @@ def read_request(conn):
         'QUERY_STRING': request_line['query_string'],
         'query': request_line['query'],
         'SERVER_PROTOCOL': request_line['protocol'],
-        'CONTENT_TYPE': headers['content-type'] or '',
-        'CONTENT_LENGTH': headers['content-length'] or '',
+        'CONTENT_TYPE': (
+            headers['content-type'] if 'content-type' in headers else ''
+        ),
+        'CONTENT_LENGTH': (
+            headers['content-length'] if 'content-length' in headers else ''
+        ),
         'wsgi.input': _input,
         'headers': headers,
         'content': content
