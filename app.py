@@ -35,7 +35,10 @@ def base_app(environ, start_response):
         # This is not the page you are looking for...
         response_body = serve_404(environ, start_response, jinja)
 
-    return [response_body.encode('utf-8')]
+    if path != '/image':
+        response_body = [response_body.encode('utf-8')]
+
+    return response_body
 
 def make_app():
     """
@@ -106,21 +109,26 @@ def serve_file(request, start_response, jinja):
     """
 
     if request['REQUEST_METHOD'] == 'GET':
-        response_body = jinja.get_template("file.html").render()
+        file_obj = open("static/text/psxrip", "rb")
+        response_body = file_obj.read()
+        file_obj.close()
+        #response_body = jinja.get_template("file.html").render()
         start_response('200 OK', [
-            ('Content-Type', 'text/html; charset=utf-8'),
+            ('Content-Type', 'text/plain; charset=utf-8'),
             ('Content-Length', str(len(response_body)))
             ]
         )
     elif request['REQUEST_METHOD'] == 'HEAD':
-        response_body = ''
+        file_obj = open("static/text/psxrip", "rb")
+        response_body = file_obj.read()
+        file_obj.close()
+        #response_body = jinja.get_template("file.html").render()
         start_response('200 OK', [
-            ('Content-Type', 'text/html; charset=utf-8'),
-            ('Content-Length', str(len(
-                jinja.get_template("file.html").render()
-                )))
+            ('Content-Type', 'text/plain; charset=utf-8'),
+            ('Content-Length', str(len(response_body)))
             ]
         )
+        response_body = ''
     else:
         response_body = serve_405(request, start_response, jinja)
     return response_body
@@ -133,21 +141,26 @@ def serve_image(request, start_response, jinja):
     """
 
     if request['REQUEST_METHOD'] == 'GET':
-        response_body = jinja.get_template("image.html").render()
+        file_obj = open("static/images/neuromancer.jpg", "rb")
+        response_body = file_obj.read()
+        file_obj.close()
+        #response_body = jinja.get_template("file.html").render()
         start_response('200 OK', [
-            ('Content-Type', 'text/html; charset=utf-8'),
+            ('Content-Type', 'image/jpeg'),
             ('Content-Length', str(len(response_body)))
             ]
         )
     elif request['REQUEST_METHOD'] == 'HEAD':
-        response_body = ''
+        file_obj = open("static/images/neuromancer.jpg", "rb")
+        response_body = file_obj.read()
+        file_obj.close()
+        #response_body = jinja.get_template("file.html").render()
         start_response('200 OK', [
-            ('Content-Type', 'text/html; charset=utf-8'),
-            ('Content-Length', str(len(
-                jinja.get_template("image.html").render()
-                )))
+            ('Content-Type', 'image/jpeg'),
+            ('Content-Length', str(len(response_body)))
             ]
         )
+        response_body = ''
     else:
         response_body = serve_405(request, start_response, jinja)
     return response_body

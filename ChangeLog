@@ -59,3 +59,8 @@
 2014-02-27
 
  * Starting hw6
+ * Added test for multipart/form-data and got it to actually work
+ * Added static hosted files directories, and a jpeg and old shell script to
+   host, on /image and /file, respectively
+ * Added file hosting on /file and /image, hosting the aforementioned files
+ * modified tests to accurately test /file (good) and /image (sorta)
