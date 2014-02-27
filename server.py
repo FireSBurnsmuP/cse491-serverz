@@ -6,12 +6,12 @@ import random
 import socket
 from urlparse import urlparse
 from urlparse import parse_qs
-import jinja2
 import cgi
 from StringIO import StringIO
+from app import make_app
 
 
-EOL = "\r\n"
+CRLF = "\r\n"
 
 def main():
     "Starts up the server and waits for connections"
@@ -20,15 +20,14 @@ def main():
     sock = socket.socket()
     # Get local machine name
     host = socket.getfqdn()
-    if host == 'magrathea':
+    if host in ('magrathea', 'Thoth'):
         # For testing, I don't want to have to change my url all the damn time.
         port = 8080
     else:
         port = random.randint(8000, 9999)
     # Bind to the port
     sock.bind((host, port))
-    print 'Starting server on', host, port
-    print 'The Web server URL for this would be http://%s:%d/' % (host, port)
+    print 'Starting server at http://%s:%d/' % (host, port)
     # Now wait for client connection.
     sock.listen(5)
 
@@ -42,101 +41,118 @@ def main():
 def handle_connection(conn):
     "Handles a given connection by sending the proper response"
 
-    # First load the jinja template environment.
-    env = jinja2.Environment(loader=jinja2.FileSystemLoader('./templates'))
-
     # Then get the request data and parse it.
     request = read_request(conn)
 
-    # find out which page they are accessing...
-    uri = urlparse(request['uri'])
-    path = uri.path.lower()
-    if path in ('/', 'index'):
-        html_response = serve_index(request, env)
-    elif path == '/content':
-        html_response = serve_content(request, env)
-    elif path == '/file':
-        html_response = serve_file(request, env)
-    elif path == '/image':
-        html_response = serve_image(request, env)
-    elif path == '/form':
-        html_response = serve_form(request, env)
-    elif path == '/submit':
-        html_response = serve_submit(request, env)
-    else:
-        # This is not the page you are looking for...
-        html_response = serve_404(request, env)
+    def start_response(status, response_headers):
+        """
+        Starts the response by sending the status line
+        Required part of WSGI.
+        """
+        headers = ''
+        for (key, value) in response_headers:
+            headers += '{0}: {1}{2}'.format(key, value, CRLF)
+        conn.send(CRLF.join([
+            'HTTP/1.1 {}'.format(status),
+            headers,
+            ''
+            ])
+        )
 
-    conn.send(html_response)
+    wsgi_app = make_app()
+    result = wsgi_app(request, start_response)
+    for data in result:
+        conn.send(data)
     conn.close()
 
 def read_request(conn):
     """
     Reads and parses the request sent by the client,
     and returns the resulting request as a dictionary.
-    The returned dictionary will be of the format:
+    The format of the dictionary will be (mostly) WSGI compliant,
+    with the following structure:
     {
-        'method': (request method),
-        'uri': (requested uri),
-        'protocol': (protocol (most likely HTTP)),
-        'protocol_version': (version of that protocol),
+        'REQUEST_METHOD': (request method),
+        'SCRIPT_NAME': '', (blank)
+        'PATH_INFO': (requested uri),
+        'QUERY_STRING': (query portion of uri),
+        'query': (the query as a dict),
+        'CONTENT_TYPE': (content-type of request, if present),
+        'CONTENT_LENGTH': (content-length of request, if present),
+        'SERVER_PROTOCOL': (protocol, likely 'HTTP/1.x'),
+        'wsgi.input': (a StringIO wrap of the raw content data)
         'headers': {
-            (headers go in this sub-dictionary, if present,
+            (all headers go in this sub-dictionary, if present,
                 otherwise this is empty.)
         },
         'content': {
-            (content goes in here, if it exists,
+            (parsed request content goes in here, if it exists,
                 otherwise this is empty.)
         }
     }
+    I'll provide some pre-parsed stuff for my application,
+    like the full headers, parsed content, and parsed query-string,
+    but I'll likely swicth that to in-app parsing,
+    after it's working.
     """
 
     # Grab the headers from the connection socket
-    temp = ''
-    while '\r\n\r\n' not in temp:
+    temp = conn.recv(1)
+    while temp[-4:] != CRLF * 2:
         temp += conn.recv(1)
-    request = temp.rstrip().split(EOL)
+    request = temp.rstrip().split(CRLF)
 
     # Pull/parse the request line...
     temp = request[0].split()
     request_line = {}
     request_line['method'] = temp[0]
     request_line['uri'] = temp[1]
-    temp = temp[2].split('/')
-    request_line['protocol'] = temp[0]
-    request_line['version'] = temp[1]
+    request_line['protocol'] = temp[2]
+    request_line['query_string'] = urlparse(request_line['uri']).query
 
-    # ... and headers...
+    # ... parse the query string into a dict...
+    request_line['query'] = {}
+    if request_line['query_string']:
+        temp = parse_qs(request_line['query_string']).iteritems()
+        request_line['query'] = {
+            key : val[0]
+            for key, val in temp
+        }
+
+    # ... and grab headers...
     # For this I must remove the request line
-    request = request[1:len(request)]
+    request = request[1:]
     headers = {}
     for line in request:
         key, value = line.split(': ', 1)
         headers[key.lower()] = value
     # ... and content (if it exists)
+    _input = ''
     if 'content-length' in headers:
         content = conn.recv(int(headers['content-length']))
         if 'content-type' in headers:
             if 'application/x-www-form-urlencoded' in headers['content-type']:
                 # form encoding's easy: just parse the query string...
                 temp = parse_qs(content)
-                # reset content to a dictionary
-                content = {}
+                _input = StringIO(content)
                 # ... and store in my dictionary.
-                for key in temp:
-                    content[key.lower()] = temp[key][0]
+                content = {
+                    key.lower(): temp[key][0]
+                    for key in temp
+                }
             elif 'multipart/form-data' in headers['content-type']:
                 # Multipart's a bit trickier: going cgi on this one.
                 # Init the field storage...
+                _input = StringIO(content)
                 temp = cgi.FieldStorage(
-                    headers=headers, fp=StringIO(content),
+                    headers=headers, fp=_input,
                     environ={'REQUEST_METHOD' : 'POST'}
                 )
                 # ... reset content to a dictionary...
                 content = {}
                 # ... and then parse all keys, values into content.
                 for key in temp:
-                    content[key] = temp[key].value
+                    content[key.lower()] = temp[key].value
             else:
                 # TODO do something with other types
                 # reset content to a dictionary
@@ -155,211 +171,23 @@ def read_request(conn):
 
     # Now to put it all together in one request object:
     request = {
-        'method': request_line['method'],
-        'uri': request_line['uri'],
-        'protocol': request_line['protocol'],
-        'protocol_version': request_line['version'],
+        'REQUEST_METHOD': request_line['method'],
+        'SCRIPT_NAME': '',
+        'PATH_INFO': request_line['uri'],
+        'QUERY_STRING': request_line['query_string'],
+        'query': request_line['query'],
+        'SERVER_PROTOCOL': request_line['protocol'],
+        'CONTENT_TYPE': (
+            headers['content-type'] if 'content-type' in headers else ''
+        ),
+        'CONTENT_LENGTH': (
+            headers['content-length'] if 'content-length' in headers else ''
+        ),
+        'wsgi.input': _input,
         'headers': headers,
         'content': content
     }
     return request
-
-def serve_index(request, env):
-    """
-    Processes a request for the index of the site.
-    This page supports GET and HEAD requests,
-    all others are met with a 405.
-    """
-
-    if request['method'] == 'GET':
-        html_response = EOL.join([
-            'HTTP/1.1 200 OK',
-            'Content-Type: text/html',
-            '',
-            env.get_template("index.html").render()
-        ])
-    elif request['method'] == 'HEAD':
-        html_response = EOL.join([
-            'HTTP/1.1 200 OK',
-            'Content-Type: text/html',
-            ''
-        ])
-    else:
-        html_response = serve_405(request, env)
-    return html_response
-
-def serve_content(request, env):
-    """
-    Processes a request for the content page.
-    This page supports GET and HEAD requests,
-    all others are met with a 405.
-    """
-
-    if request['method'] == 'GET':
-        html_response = EOL.join([
-            'HTTP/1.1 200 OK',
-            'Content-Type: text/html',
-            '',
-            env.get_template("content.html").render()
-        ])
-    elif request['method'] == 'HEAD':
-        html_response = EOL.join([
-            'HTTP/1.1 200 OK',
-            'Content-Type: text/html',
-            ''
-        ])
-    else:
-        html_response = serve_405(request, env)
-    return html_response
-
-def serve_file(request, env):
-    """
-    Processes a request for the file.
-    This page supports GET and HEAD requests,
-    all others are met with a 405.
-    """
-
-    if request['method'] == 'GET':
-        html_response = EOL.join([
-            'HTTP/1.1 200 OK',
-            'Content-Type: text/html',
-            '',
-            env.get_template("file.html").render()
-        ])
-    elif request['method'] == 'HEAD':
-        html_response = EOL.join([
-            'HTTP/1.1 200 OK',
-            'Content-Type: text/html',
-            ''
-        ])
-    else:
-        html_response = serve_405(request, env)
-    return html_response
-
-def serve_image(request, env):
-    """
-    Processes a request for the image.
-    This page supports GET and HEAD requests,
-    all others are met with a 405.
-    """
-
-    if request['method'] == 'GET':
-        html_response = EOL.join([
-            'HTTP/1.1 200 OK',
-            'Content-Type: text/html',
-            '',
-            env.get_template("image.html").render()
-        ])
-    elif request['method'] == 'HEAD':
-        html_response = EOL.join([
-            'HTTP/1.1 200 OK',
-            'Content-Type: text/html',
-            ''
-        ])
-    else:
-        html_response = serve_405(request, env)
-    return html_response
-
-def serve_form(request, env):
-    """
-    Processes a request for the form page.
-    This page supports GET, and HEAD requests,
-    all others are met with a 405.
-    """
-
-    if request['method'] == 'GET':
-        html_response = EOL.join([
-            'HTTP/1.1 200 OK',
-            'Content-Type: text/html',
-            '',
-            env.get_template("form.html").render()
-        ])
-    elif request['method'] == 'HEAD':
-        html_response = EOL.join([
-            'HTTP/1.1 200 OK',
-            'Content-Type: text/html',
-            ''
-        ])
-    else:
-        html_response = serve_405(request, env)
-    return html_response
-
-def serve_submit(request, env):
-    """
-    Processes a request for the submit page
-    This page supports GET, POST and HEAD requests,
-    all others are met with a 405.
-    """
-
-    uri = urlparse(request['uri'])
-
-    if request['method'] == 'GET':
-        query = parse_qs(uri.query)
-        html_response = EOL.join([
-            'HTTP/1.1 200 OK',
-            'Content-Type: text/html',
-            '',
-            env.get_template("submit.html").render({
-                'firstname': query['firstname'][0],
-                'lastname': query['lastname'][0]
-            })
-        ])
-    elif request['method'] == 'POST':
-        html_response = EOL.join([
-            'HTTP/1.1 200 OK',
-            'Content-Type: text/html',
-            '',
-            env.get_template("submit.html").render({
-                'firstname': request['content']['firstname'],
-                'lastname': request['content']['lastname']
-            })
-        ])
-    elif request['method'] == 'HEAD':
-        html_response = EOL.join([
-            'HTTP/1.1 200 OK',
-            'Content-Type: text/html',
-            ''
-        ])
-    else:
-        html_response = serve_405(request, env, allowed=['GET', 'POST', 'HEAD'])
-    return html_response
-
-def serve_404(request, env):
-    "Processes a request for something that doesn't exist."
-
-    if request['method'] == 'HEAD':
-        # Just send the headers for my 404 page.
-        html_response = EOL.join([
-            'HTTP/1.1 404 Not Found',
-            'Content-Type: text/html',
-            ''
-        ])
-    else:
-        # Actually send the 404 page.
-        html_response = EOL.join([
-            'HTTP/1.1 404 Not Found',
-            'Content-Type: text/html',
-            '',
-            env.get_template("404.html").render()
-        ])
-    return html_response
-
-def serve_405(request, env, allowed=None):
-    """
-    Processes a request for a resource to which the client
-    has requested a method I don't support, including sending
-    a list of supported formats.
-    Default for 'allowed' is ['GET', 'HEAD'], what most things
-    allow.
-    """
-    if allowed is None:
-        allowed = ['GET', 'HEAD']
-    html_response = EOL.join([
-        'HTTP/1.1 405 Method Not Allowed',
-        'Allow: {0}'.format(', '.join(allowed)),
-        ''
-    ])
-    return html_response
 
 if __name__ == '__main__':
     main()
