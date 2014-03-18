@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# This bash script was written by Chris Thomas to properly rip
+#  playstation 1 (psx) cds into a .bin/.cue image file that can
+#  actually be used by ePSXe, the most popular (and best)
+#  cross-platform PlayStation emulator.
+# Just make sure you have cdrdao package installed on your system,
+#  and you change the PSXDIR variable to the directory you want
+#  your images to be located.
+# Not the best, but hey, it works (or at least it did, way back when)
+
+# Change this to the directory you want your playstation games to be in
+export PSXDIR=/home/firesburnsmup/psx
+if [ $1 -z -o $2 -n ];
+        then
+        echo "\nERROR: Invalid usage.\n"
+        echo "\n  Usage: psxrip [filename]\n"
+        echo "\n  where filename is the desired name, minus extensions.\n"
+fi
+cd /usr/bin
+./cdrdao read-cd --read-raw --datafile $PSXDIR/$1.bin --device ATAPI:0,0,0 --driver generic-mmc-raw $PSXDIR/$1.cue

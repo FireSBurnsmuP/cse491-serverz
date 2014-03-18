@@ -90,7 +90,8 @@ def test_get_content():
 def test_get_image():
     "Tests the GET method handler for /image"
     conn = FakeConnection("GET /image HTTP/1.1{0}{0}".format(CRLF))
-    expected_in_return = '<title>Fires&apos; Image Page</title>'
+    # TODO better test for images
+    expected_in_return = '200 OK'
 
     server.handle_connection(conn)
 
@@ -99,7 +100,7 @@ def test_get_image():
 def test_get_file():
     "Tests the GET method handler for /file"
     conn = FakeConnection("GET /file HTTP/1.1{0}{0}".format(CRLF))
-    expected_in_return = '<title>Fires&apos; File Page</title>'
+    expected_in_return = 'PSXDIR'
 
     server.handle_connection(conn)
 
@@ -164,12 +165,27 @@ def test_post_submit_multipart():
     #         'lastname': 'Wafflehouse'
     #     }
     # )
-    # expected_in_return = '<h1>Hello, Zerxes Wafflehouse.</h1>'
+    conn = FakeConnection(CRLF.join([
+        'POST /submit HTTP/1.1',
+        'Content-Length: 306',
+        'Content-Type: multipart/form-data; '
+        'boundary=---------------------------19062113681433463560301987834',
+        '',
+        '-----------------------------19062113681433463560301987834',
+        'Content-Disposition: form-data; name="firstname"',
+        'Zerxes',
+        '-----------------------------19062113681433463560301987834 ',
+        'Content-Disposition: form-data; name="lastname"',
+        'Wafflehouse ',
+        '-----------------------------19062113681433463560301987834--'
+        ])
+    )
+    expected_in_return = '<h1>Hello, Zerxes Wafflehouse.</h1>'
 
-    # server.handle_connection(conn)
+    server.handle_connection(conn)
 
-    # assert expected_in_return in conn.sent, 'Got: "{0}",\nExpected: "{1}"'.format(conn.sent, expected_in_return)
-    assert False, 'multipart/form-data post test not yet implemented'
+    assert expected_in_return in conn.sent, 'Got: "{0}",\nExpected: "{1}"'.format(conn.sent, expected_in_return)
+    # assert False, 'multipart/form-data post test not yet implemented'
 
 #
 # PUT method tests
@@ -251,7 +267,7 @@ def test_head_file():
     conn = FakeConnection("HEAD /file HTTP/1.1{0}{0}".format(CRLF))
     expected_in_return = CRLF.join([
         'HTTP/1.1 200 OK',
-        'Content-Type: text/html; charset=utf-8'
+        'Content-Type: text/plain; charset=utf-8'
     ])
 
     server.handle_connection(conn)
@@ -287,7 +303,7 @@ def test_head_image():
     conn = FakeConnection("HEAD /image HTTP/1.1{0}{0}".format(CRLF))
     expected_in_return = CRLF.join([
         'HTTP/1.1 200 OK',
-        'Content-Type: text/html; charset=utf-8'
+        'Content-Type: image/jpeg'
     ])
 
     server.handle_connection(conn)
