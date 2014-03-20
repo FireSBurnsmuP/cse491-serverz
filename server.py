@@ -10,6 +10,12 @@ import cgi
 from StringIO import StringIO
 from app import make_app
 
+# quixote stuff which is not in use right now
+# import quixote
+# from quixote.demo import create_publisher
+# from quixote.demo.mini_demo import create_publisher
+# from quixote.demo.altdemo import create_publisher
+
 
 CRLF = "\r\n"
 
@@ -31,14 +37,20 @@ def main():
     # Now wait for client connection.
     sock.listen(5)
 
+    wsgi_app = make_app()
+    # quixote stuff for testing with that
+    # publisher.is_thread_safe = True # hack...
+    # p = create_publisher()
+    # wsgi_app = quixote.get_wsgi_app()
+
     print 'Entering infinite loop; hit CTRL-C to exit'
     while True:
         # Establish connection with client.
         conn, (client_host, client_port) = sock.accept()
         print 'Got connection from', client_host, client_port
-        handle_connection(conn)
+        handle_connection(conn, wsgi_app)
 
-def handle_connection(conn):
+def handle_connection(conn, wsgi_app):
     "Handles a given connection by sending the proper response"
 
     # Then get the request data and parse it.
@@ -59,7 +71,6 @@ def handle_connection(conn):
             ])
         )
 
-    wsgi_app = make_app()
     result = wsgi_app(request, start_response)
     for data in result:
         conn.send(data)
@@ -92,7 +103,7 @@ def read_request(conn):
     }
     I'll provide some pre-parsed stuff for my application,
     like the full headers, parsed content, and parsed query-string,
-    but I'll likely swicth that to in-app parsing,
+    but I'll likely switch that to in-app parsing,
     after it's working.
     """
 
@@ -125,7 +136,15 @@ def read_request(conn):
     headers = {}
     for line in request:
         key, value = line.split(': ', 1)
-        headers[key.lower()] = value
+        key = key.lower()
+        # now handle duplicate headers
+        if key not in headers:
+            # if the header isn't already in, add it
+            headers[key] = value
+        else:
+            # it's already in the headers, add it in to previous
+            # value delimited by a comma (as per spec)
+            headers[key] = ', '.join([headers[key], value])
     # ... and content (if it exists)
     _input = ''
     if 'content-length' in headers:
@@ -187,6 +206,11 @@ def read_request(conn):
         'headers': headers,
         'content': content
     }
+
+    if 'cookie' in headers:
+        request['HTTP_COOKIE'] = headers['cookie']
+        # TODO think about what to do with Expires, which can contain commas...
+
     return request
 
 if __name__ == '__main__':

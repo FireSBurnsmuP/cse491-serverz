@@ -65,6 +65,11 @@
  * Added file hosting on /file and /image, hosting the aforementioned files
  * modified tests to accurately test /file (good) and /image (sorta)
 
-2014-03-17
+2014-03-18
 
  * Started hw7 branch (again, after merging)
+
+2014-03-19
+
+  * fixed date on last Changlog
+  * cookie passing (server) implemented
