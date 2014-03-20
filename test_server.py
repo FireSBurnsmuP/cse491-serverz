@@ -48,6 +48,13 @@ def test_handle_connection():
 
     assert expected_in_return in conn.sent, 'Got: "{0}",\nExpected: "{1}"'.format(conn.sent, expected_in_return)
 
+def test_cookie():
+    """
+    Test cookie passing
+    """
+
+    assert False, 'Cookie test not yet implemented'
+
 #
 # 404 tests
 #

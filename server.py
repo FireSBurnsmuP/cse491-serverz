@@ -7,14 +7,15 @@ import socket
 from urlparse import urlparse
 from urlparse import parse_qs
 import cgi
+import sys
 from StringIO import StringIO
 from app import make_app
 
-# quixote stuff which is not in use right now
-# import quixote
-# from quixote.demo import create_publisher
-# from quixote.demo.mini_demo import create_publisher
-# from quixote.demo.altdemo import create_publisher
+import quixote
+from quixote.demo import create_publisher
+from quixote.demo.mini_demo import create_publisher
+from quixote.demo.altdemo import create_publisher
+import imageapp
 
 
 CRLF = "\r\n"
@@ -26,22 +27,34 @@ def main():
     sock = socket.socket()
     # Get local machine name
     host = socket.getfqdn()
+
+    # TODO get portnum from commandline
     if host in ('magrathea', 'Thoth'):
         # For testing, I don't want to have to change my url all the damn time.
         port = 8080
     else:
         port = random.randint(8000, 9999)
     # Bind to the port
+    # TODO figure out how to immediately unbind when I'm done
     sock.bind((host, port))
     print 'Starting server at http://%s:%d/' % (host, port)
     # Now wait for client connection.
     sock.listen(5)
 
-    wsgi_app = make_app()
-    # quixote stuff for testing with that
-    # publisher.is_thread_safe = True # hack...
-    # p = create_publisher()
-    # wsgi_app = quixote.get_wsgi_app()
+    # TODO get this from commandline
+    app_to_run = 'imageapp'
+    if app_to_run == 'quixote_demo':
+        # quixote stuff for testing with that
+        p = create_publisher()
+        # p.is_thread_safe = True # hack...
+        wsgi_app = quixote.get_wsgi_app()
+    elif app_to_run == 'imageapp':
+        imageapp.setup()
+        p = imageapp.create_publisher()
+        wsgi_app = quixote.get_wsgi_app()
+    else: #if app_to_run == 'fires': # default
+        wsgi_app = make_app()
+
 
     print 'Entering infinite loop; hit CTRL-C to exit'
     while True:
@@ -55,8 +68,10 @@ def handle_connection(conn, wsgi_app):
 
     # Then get the request data and parse it.
     request = read_request(conn)
+    # print 'parsed request info:'
+    # print request['content']
 
-    def start_response(status, response_headers):
+    def start_response(status, response_headers, exc_info=None):
         """
         Starts the response by sending the status line
         Required part of WSGI.
@@ -91,7 +106,14 @@ def read_request(conn):
         'CONTENT_TYPE': (content-type of request, if present),
         'CONTENT_LENGTH': (content-length of request, if present),
         'SERVER_PROTOCOL': (protocol, likely 'HTTP/1.x'),
+        'SERVER_NAME': 'magrathea'
+        'SERVER_PORT': (whatever port we're on),
         'wsgi.input': (a StringIO wrap of the raw content data)
+        'wsgi.version': (1, 0) (to signify version 1.0),
+        'wsgi.errors': sys.stderr (where to send errors),
+        'wsgi.multithread': False,
+        'wsgi.multiprocess': False,
+        'wsgi.run_once': False,
         'headers': {
             (all headers go in this sub-dictionary, if present,
                 otherwise this is empty.)
@@ -148,7 +170,9 @@ def read_request(conn):
     # ... and content (if it exists)
     _input = ''
     if 'content-length' in headers:
-        content = conn.recv(int(headers['content-length']))
+        content = ''
+        while len(content) < int(headers['content-length']):
+            content += conn.recv(1)
         if 'content-type' in headers:
             if 'application/x-www-form-urlencoded' in headers['content-type']:
                 # form encoding's easy: just parse the query string...
@@ -196,6 +220,13 @@ def read_request(conn):
         'QUERY_STRING': request_line['query_string'],
         'query': request_line['query'],
         'SERVER_PROTOCOL': request_line['protocol'],
+        'SERVER_PORT': conn.getsockname()[0],
+        'wsgi.version': (1, 0),
+        'wsgi.errors': sys.stderr,
+        'wsgi.multithread': False,
+        'wsgi.multiprocess': False,
+        'wsgi.run_once': False,
+        'wsgi.url_scheme': 'http',
         'CONTENT_TYPE': (
             headers['content-type'] if 'content-type' in headers else ''
         ),

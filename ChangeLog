@@ -71,5 +71,12 @@
 
 2014-03-19
 
-  * fixed date on last Changlog
+  * fixed date on last Changelog
   * cookie passing (server) implemented
+  * Added image to imageapp's index
+
+2014-03-20
+
+  * more wsgi compliance
+  * considered moving app into a proper module structure... maybe later.
+
