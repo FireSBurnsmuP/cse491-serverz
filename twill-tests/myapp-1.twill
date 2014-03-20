@@ -1,0 +1,69 @@
+echo "Checking my app..."
+# First go to the index
+go /
+code 200
+echo "Index OK"
+
+# check content
+follow Content
+code 200
+echo "/content OK"
+
+# return and check File
+go /
+follow File
+code 200
+echo "/file OK"
+
+# return and go to Form
+go /
+follow Form
+code 200
+echo "/form OK"
+
+# check form 1 submission
+formvalue 1 firstname "Napoleon"
+formvalue 1 lastname "Bonaparte"
+submit
+code 200
+find "Hello, Napoleon Bonaparte."
+echo "/form submit using GET url-encoding OK"
+back
+
+# clear form 1 JIC
+formclear 1
+# check form 2 submission
+formvalue 2 firstname "Genghis"
+formvalue 2 lastname "Kahn"
+submit
+code 200
+find "Hello, Genghis Kahn."
+echo "/form submit using POST url-encoding OK"
+back
+
+# clear form 2 JIC
+formclear 2
+# check form 3 submission
+formvalue 3 firstname "Alexander"
+formvalue 3 lastname "T. Great"
+submit
+code 200
+find "Hello, Alexander T. Great."
+echo "/form submit using multipart/form-data OK"
+
+echo "Form submissions on /form All OK"
+
+# return and check Image
+go /
+follow Image
+code 200
+echo "/image OK"
+
+# try for a 404
+go /doesnotexists
+code 404
+# make sure my custom message is showing
+find "Move along..."
+
+# That's all. Should be working if it got to this point.
+echo "All links and forms OK"

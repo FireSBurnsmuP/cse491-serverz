@@ -1,0 +1,50 @@
+go http://magrathea:8080
+list
+links
+sholinks
+show_links
+showform
+showforms
+showlinks
+follow Content
+go /
+code 200
+show_links
+showlinks
+follow File
+code 200
+go /
+follow Form
+showforms
+formtext
+show
+formvalue 1 firstname Zerxes
+formvalue 1 lastname Wafflehouse
+form 1 submit
+submit 1
+submit
+show
+back
+formclear 1
+show
+fv 2 firstname Zerxes
+fv 2 lastname Wafflehouse
+submit
+show
+back
+fv 3 firstname zerxes
+fv 3 lastname wafflehouse
+submit
+show
+back
+formclear
+formclear 2
+formclear 1 
+formclear 3
+fv 3 firstname zerxes
+fv 3 lastname wafflehouse
+submit
+show
+go /doesntexists
+show
+code 404

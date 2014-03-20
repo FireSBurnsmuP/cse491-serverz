@@ -1,0 +1,14 @@
+follow login
+formvalue 1 name Zerxes
+submit
+
+find "Welcome, Zerxes!"
+
+go /
+find "Hello, Zerxes."
+
+follow logout
+find "Goodbye, Zerxes."
+
+follow "start over"
+notfind "Hello"
