@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 """
 app.py - the wsgi application interface for my site
 """

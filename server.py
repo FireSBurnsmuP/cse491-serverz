@@ -10,8 +10,8 @@ from urlparse import parse_qs
 import cgi
 import sys
 from StringIO import StringIO
-from app import make_app
 
+import app
 import quixote
 from quixote.demo import create_publisher
 from quixote.demo.mini_demo import create_publisher
@@ -86,7 +86,7 @@ def main():
     # Now wait for client connection.
     sock.listen(5)
 
-    # TODO get this from commandline
+    # get this from commandline
     app_to_run = args.app
     if app_to_run == 'quixote_demo':
         # quixote stuff for testing with that
@@ -98,15 +98,21 @@ def main():
         p = imageapp.create_publisher()
         wsgi_app = quixote.get_wsgi_app()
     else: #if app_to_run == 'fires': # default
-        wsgi_app = make_app()
+        wsgi_app = app.make_app()
 
 
     print 'Entering infinite loop; hit CTRL-C to exit'
-    while True:
-        # Establish connection with client.
-        conn, (client_host, client_port) = sock.accept()
-        print 'Got connection from', client_host, client_port
-        handle_connection(conn, wsgi_app)
+    try:
+        while True:
+            # Establish connection with client.
+            conn, (client_host, client_port) = sock.accept()
+            print 'Got connection from', client_host, client_port
+            handle_connection(conn, wsgi_app)
+    finally:
+        # teardown stuffs
+        if app_to_run == 'imageapp':
+            imageapp.teardown()
+
 
 def handle_connection(conn, wsgi_app):
     "Handles a given connection by sending the proper response"
