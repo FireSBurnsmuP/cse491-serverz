@@ -1,3 +1,7 @@
+"""
+Allows me easy access to the files in the 'static' files folders
+"""
+
 import os
 
 rel_static_dir = './static'

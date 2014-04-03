@@ -1,3 +1,10 @@
+"""
+Abstracts the html templating/rendering engine,
+in case I decide to use another someday.
+"""
+
+# TODO class? I don't like these globals...
+
 import os
 import jinja2
 
@@ -6,6 +13,9 @@ loader = None
 env = None
 
 def init_templates():
+    """
+    initializes the template engine
+    """
     global loader, env
 
     # calculate the location of the templates directory relative to the
@@ -33,3 +43,6 @@ def escape(string):
     Escapes strings to make them safe for URI use
     """
     return jinja2.escape(string)
+
+# and auto-load the template env
+init_templates()

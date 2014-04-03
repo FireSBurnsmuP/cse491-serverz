@@ -84,3 +84,8 @@
   * add twill tests
   * create twill test for myapp
 
+2014-04-02
+
+  * package app.py into its own package, to make it easier to write good code
+  * documentation, etc.
+  * start getting app's imageapp up and running
