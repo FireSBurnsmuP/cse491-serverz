@@ -32,4 +32,5 @@ def get_latest_image():
     image_num = max(images.keys())
     return images[image_num]
 
+# add in the initial image on load
 add_image(static_files.get_image_file('neuromancer.jpg'))
