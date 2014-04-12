@@ -79,4 +79,23 @@
 
   * more wsgi compliance
   * considered moving app into a proper module structure... maybe later.
+  * start hw8
+  * add command-line args (optional, with defaults)
+  * add twill tests
+  * create twill test for myapp
+
+2014-04-02
+
+  * package app.py into its own package, to make it easier to write good code
+  * documentation, etc.
+  * start getting app's imageapp up and running
+
+2014-04-03
+
+  * nosetests now work again, they haven't since the wsgi refactor
+
+2014-04-07
+
+  * fixed imageshare/image_raw on ref-server, now works on both
+  * imageshare/image_view now working (preliminary)
 

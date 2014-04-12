@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}Upload - Fires&apos; Image Sharing Application{% endblock %}
+
+{% block content %}
+    <h3>Upload an Image:</h3>
+
+    <form enctype="multipart/form-data" action="/imageshare/upload_receive" method="POST">
+        <label>File: <input type="file" name="file" accept="image/jpeg, image/gif, image/png, image/bmp, image/tiff" /></label><br />
+        <input type="submit" value="Upload file">
+    </form>
+{% endblock %}

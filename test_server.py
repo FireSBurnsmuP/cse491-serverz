@@ -3,8 +3,10 @@ Contains the tests for server.py
 """
 import requests
 import server
+import app
 
 CRLF = "\r\n"
+wsgi_app = app.make_app()
 
 class FakeConnection(object):
     """
@@ -16,23 +18,31 @@ class FakeConnection(object):
         self.sent = ""
         self.is_closed = False
 
-    def recv(self, n):
+    def recv(self, number):
         "receives something?"
-        if n > len(self.to_recv):
-            r = self.to_recv
+        if number > len(self.to_recv):
+            recv = self.to_recv
             self.to_recv = ""
-            return r
+            return recv
 
-        r, self.to_recv = self.to_recv[:n], self.to_recv[n:]
-        return r
+        recv, self.to_recv = self.to_recv[:number], self.to_recv[number:]
+        return recv
 
-    def send(self, s):
+    def send(self, send):
         "sends something?"
-        self.sent += s
+        self.sent += send
 
     def close(self):
         "closes connection?"
         self.is_closed = True
+
+    def getsockname(self):
+        """
+        Mimics the socket.getsockname() function by returning and array,
+        containing the hostname and port number
+        """
+        self.sent = self.sent # shut up, pylint. I know what I'm doing here.
+        return ['magrathea', 8080]
 
 # Test a basic GET call.
 
@@ -44,7 +54,7 @@ def test_handle_connection():
     conn = FakeConnection("GET / HTTP/1.1{0}{0}".format(CRLF))
     expected_in_return = '<title>Fires&apos; Index</title>'
 
-    server.handle_connection(conn)
+    server.handle_connection(conn, wsgi_app)
 
     assert expected_in_return in conn.sent, 'Got: "{0}",\nExpected: "{1}"'.format(conn.sent, expected_in_return)
 
@@ -64,7 +74,7 @@ def test_get_404():
     conn = FakeConnection("GET /idontexist HTTP/1.1{0}{0}".format(CRLF))
     expected_in_return = '<h1>This is not the page you are looking for...</h1>'
 
-    server.handle_connection(conn)
+    server.handle_connection(conn, wsgi_app)
 
     assert expected_in_return in conn.sent, 'Got: "{0}",\nExpected: "{1}"'.format(conn.sent, expected_in_return)
 
@@ -77,7 +87,7 @@ def test_head_404():
         'Content-Type: text/html; charset=utf-8'
     ])
 
-    server.handle_connection(conn)
+    server.handle_connection(conn, wsgi_app)
 
     assert expected_in_return in conn.sent, 'Got: "{0}",\nExpected: "{1}"'.format(conn.sent, expected_in_return)
 
@@ -90,7 +100,7 @@ def test_get_content():
     conn = FakeConnection("GET /content HTTP/1.1{0}{0}".format(CRLF))
     expected_in_return = '<title>Fires&apos; Content Page</title>'
 
-    server.handle_connection(conn)
+    server.handle_connection(conn, wsgi_app)
 
     assert expected_in_return in conn.sent, 'Got: "{0}",\nExpected: "{1}"'.format(conn.sent, expected_in_return)
 
@@ -100,7 +110,7 @@ def test_get_image():
     # TODO better test for images
     expected_in_return = '200 OK'
 
-    server.handle_connection(conn)
+    server.handle_connection(conn, wsgi_app)
 
     assert expected_in_return in conn.sent, 'Got: "{0}",\nExpected: "{1}"'.format(conn.sent, expected_in_return)
 
@@ -109,7 +119,7 @@ def test_get_file():
     conn = FakeConnection("GET /file HTTP/1.1{0}{0}".format(CRLF))
     expected_in_return = 'PSXDIR'
 
-    server.handle_connection(conn)
+    server.handle_connection(conn, wsgi_app)
 
     assert expected_in_return in conn.sent, 'Got: "{0}",\nExpected: "{1}"'.format(conn.sent, expected_in_return)
 
@@ -118,7 +128,7 @@ def test_get_form():
     conn = FakeConnection("GET /form HTTP/1.1{0}{0}".format(CRLF))
     expected_in_return = '<h1>Hello, world</h1> this is the form on fires&apos; Web server.'
 
-    server.handle_connection(conn)
+    server.handle_connection(conn, wsgi_app)
 
     assert expected_in_return in conn.sent, 'Got: "{0}",\nExpected: "{1}"'.format(conn.sent, expected_in_return)
 
@@ -127,7 +137,7 @@ def test_get_submit():
     conn = FakeConnection("GET /submit?firstname=Zerxes&lastname=Wafflehouse HTTP/1.1{0}{0}".format(CRLF))
     expected_in_return = '<h1>Hello, Zerxes Wafflehouse.</h1>'
 
-    server.handle_connection(conn)
+    server.handle_connection(conn, wsgi_app)
 
     assert expected_in_return in conn.sent, 'Got: "{0}",\nExpected: "{1}"'.format(conn.sent, expected_in_return)
 
@@ -144,7 +154,7 @@ def test_post_index():
         CRLF
     ])
 
-    server.handle_connection(conn)
+    server.handle_connection(conn, wsgi_app)
 
     assert conn.sent == expected_in_return, 'Got: "{0}",\nExpected: "{1}"'.format(conn.sent, expected_in_return)
 
@@ -160,7 +170,7 @@ def test_post_submit_form_enc():
     )
     expected_in_return = '<h1>Hello, Zerxes Wafflehouse.</h1>'
 
-    server.handle_connection(conn)
+    server.handle_connection(conn, wsgi_app)
 
     assert expected_in_return in conn.sent, 'Got: "{0}",\nExpected: "{1}"'.format(conn.sent, expected_in_return)
 
@@ -172,12 +182,7 @@ def test_post_submit_multipart():
     #         'lastname': 'Wafflehouse'
     #     }
     # )
-    conn = FakeConnection(CRLF.join([
-        'POST /submit HTTP/1.1',
-        'Content-Length: 306',
-        'Content-Type: multipart/form-data; '
-        'boundary=---------------------------19062113681433463560301987834',
-        '',
+    content = CRLF.join([
         '-----------------------------19062113681433463560301987834',
         'Content-Disposition: form-data; name="firstname"',
         'Zerxes',
@@ -186,10 +191,18 @@ def test_post_submit_multipart():
         'Wafflehouse ',
         '-----------------------------19062113681433463560301987834--'
         ])
+    conn = FakeConnection(CRLF.join([
+        'POST /submit HTTP/1.1',
+        ''.join(['Content-Length: ', str(len(content))]),
+        'Content-Type: multipart/form-data; '
+        'boundary=---------------------------19062113681433463560301987834',
+        '',
+        content
+        ])
     )
     expected_in_return = '<h1>Hello, Zerxes Wafflehouse.</h1>'
 
-    server.handle_connection(conn)
+    server.handle_connection(conn, wsgi_app)
 
     assert expected_in_return in conn.sent, 'Got: "{0}",\nExpected: "{1}"'.format(conn.sent, expected_in_return)
     # assert False, 'multipart/form-data post test not yet implemented'
@@ -207,7 +220,7 @@ def test_put_index():
         CRLF
     ])
 
-    server.handle_connection(conn)
+    server.handle_connection(conn, wsgi_app)
 
     assert conn.sent == expected_in_return, 'Got: "{0}",\nExpected: "{1}"'.format(conn.sent, expected_in_return)
 
@@ -220,7 +233,7 @@ def test_put_submit():
         CRLF
     ])
 
-    server.handle_connection(conn)
+    server.handle_connection(conn, wsgi_app)
 
     assert conn.sent == expected_in_return, 'Got: "{0}",\nExpected: "{1}"'.format(conn.sent, expected_in_return)
 
@@ -237,7 +250,7 @@ def test_delete_index():
         CRLF
     ])
 
-    server.handle_connection(conn)
+    server.handle_connection(conn, wsgi_app)
 
     assert conn.sent == expected_in_return, 'Got: "{0}",\nExpected: "{1}"'.format(conn.sent, expected_in_return)
 
@@ -253,7 +266,7 @@ def test_head_index():
         'Content-Type: text/html; charset=utf-8'
     ])
 
-    server.handle_connection(conn)
+    server.handle_connection(conn, wsgi_app)
 
     assert expected_in_return in conn.sent, 'Got: "{0}",\nExpected: "{1}"'.format(conn.sent, expected_in_return)
 
@@ -265,7 +278,7 @@ def test_head_content():
         'Content-Type: text/html; charset=utf-8'
     ])
 
-    server.handle_connection(conn)
+    server.handle_connection(conn, wsgi_app)
 
     assert expected_in_return in conn.sent, 'Got: "{0}",\nExpected: "{1}"'.format(conn.sent, expected_in_return)
 
@@ -277,7 +290,7 @@ def test_head_file():
         'Content-Type: text/plain; charset=utf-8'
     ])
 
-    server.handle_connection(conn)
+    server.handle_connection(conn, wsgi_app)
 
     assert expected_in_return in conn.sent, 'Got: "{0}",\nExpected: "{1}"'.format(conn.sent, expected_in_return)
 
@@ -289,7 +302,7 @@ def test_head_submit():
         'Content-Type: text/html; charset=utf-8'
     ])
 
-    server.handle_connection(conn)
+    server.handle_connection(conn, wsgi_app)
 
     assert expected_in_return in conn.sent, 'Got: "{0}",\nExpected: "{1}"'.format(conn.sent, expected_in_return)
 
@@ -301,7 +314,7 @@ def test_head_form():
         'Content-Type: text/html; charset=utf-8'
     ])
 
-    server.handle_connection(conn)
+    server.handle_connection(conn, wsgi_app)
 
     assert expected_in_return in conn.sent, 'Got: "{0}",\nExpected: "{1}"'.format(conn.sent, expected_in_return)
 
@@ -313,7 +326,7 @@ def test_head_image():
         'Content-Type: image/jpeg'
     ])
 
-    server.handle_connection(conn)
+    server.handle_connection(conn, wsgi_app)
 
     assert expected_in_return in conn.sent, 'Got: "{0}",\nExpected: "{1}"'.format(conn.sent, expected_in_return)
 
