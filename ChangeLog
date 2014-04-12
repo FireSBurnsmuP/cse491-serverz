@@ -99,3 +99,9 @@
   * fixed imageshare/image_raw on ref-server, now works on both
   * imageshare/image_view now working (preliminary)
 
+2014-04-12
+
+  * finished imageshare replicate
+  * app now parses wsgi.input itself
+
+  * hw9 go
