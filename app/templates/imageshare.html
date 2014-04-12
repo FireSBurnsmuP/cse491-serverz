@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}Fires&apos; Index{% endblock %}
+{% block title %}Fires&apos; Image Sharing Application{% endblock %}
 
 {% block content %}
-    <a href='imageshare/upload'>Upload an image</a> |
-    <a href='imageshare/image'>Show most recent image</a>
+    <a href="imageshare/upload">Upload an image</a> |
+    <a href="imageshare/image_view">Show most recent image</a>
     <p>
         Here is the most recently shared image:<br />
-        <img width=40% src='imageshare/image_raw?special=latest'/>
+        <img width="40%" src="/imageshare/image_raw?special=latest"/>
     </p>
-{% endblock  %}
+{% endblock %}

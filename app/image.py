@@ -7,7 +7,7 @@ from . import static_files
 
 images = {}
 
-def add_image(data):
+def add_image(data, filetype='jpeg'):
     """
     Adds an image into my internal storage
     """
@@ -16,14 +16,18 @@ def add_image(data):
     else:
         image_num = 0
 
-    images[image_num] = data
+    images[image_num] = {'data': data, 'filetype': filetype}
     return image_num
 
 def get_image(id_num):
     """
     Gets an image by its ID
+    Returns None if an image by that ID doesn't exist
     """
-    return images[id_num]
+    if id_num in images.keys():
+        return images[id_num]
+    else:
+        return None
 
 def get_latest_image():
     """
@@ -32,5 +36,12 @@ def get_latest_image():
     image_num = max(images.keys())
     return images[image_num]
 
+def get_oldest_image():
+    """
+    Grabs the first image stored
+    """
+    image_num = min(images.keys())
+    return images[image_num]
+
 # add in the initial image on load
-add_image(static_files.get_image_file('neuromancer.jpg'))
+add_image(static_files.get_image_file('neuromancer.jpg'), 'jpeg')

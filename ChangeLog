@@ -94,3 +94,8 @@
 
   * nosetests now work again, they haven't since the wsgi refactor
 
+2014-04-07
+
+  * fixed imageshare/image_raw on ref-server, now works on both
+  * imageshare/image_view now working (preliminary)
+

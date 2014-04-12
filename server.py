@@ -112,6 +112,8 @@ def main():
         # teardown stuffs
         if app_to_run == 'imageapp':
             imageapp.teardown()
+        sock.shutdown()
+        sock.close()
 
 
 def handle_connection(conn, wsgi_app):

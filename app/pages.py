@@ -35,23 +35,32 @@ def serve_page(request, start_response):
         response_body = submit(request, start_response)
     elif path == '/imageshare':
         response_body = std_html('imageshare', request, start_response)
+    elif path == '/imageshare/upload':
+        response_body = std_html('imageshare_upload', request, start_response)
+    elif path == '/imageshare/upload_receive':
+        response_body = receive_dynamic_image(
+            request, start_response, '/imageshare')
+    elif path == '/imageshare/image_view':
+        response_body = std_html('imageshare_view', request, start_response)
+    elif path == '/imageshare/image_raw':
+        response_body = serve_dynamic_image(request, start_response)
     else:
         # This is not the page you are looking for...
         response_body = serve_404(request, start_response)
 
-    if path != '/image':
+    if path not in ['/image', '/imageshare/image_raw']:
         response_body = [response_body.encode('utf-8')]
 
     return response_body
 
 def std_html(page, request, start_response):
     """
-    renders a standard page by its name;
+    renders a standard page by its name
     for pages which support GET and HEAD requests,
     and meet all others with a 405.
     """
     if request['REQUEST_METHOD'] == 'GET':
-        response_body = html.render(''.join([page,".html"]))
+        response_body = html.render(''.join([page, ".html"]))
         start_response('200 OK', [
             ('Content-Type', 'text/html; charset=utf-8'),
             ('Content-Length', str(len(response_body)))
@@ -62,7 +71,7 @@ def std_html(page, request, start_response):
         start_response('200 OK', [
             ('Content-Type', 'text/html; charset=utf-8'),
             ('Content-Length', str(len(
-                html.render(''.join([page,".html"]))
+                html.render(''.join([page, ".html"]))
                 )))
             ]
         )
@@ -166,6 +175,93 @@ def serve_static_image(filename, request, start_response):
         response_body = serve_405(request, start_response)
     return response_body
 
+def serve_dynamic_image(request, start_response):
+    """
+    Processes a request for a dynamic image.
+    Uses the query-string to determine what to do.
+    This page supports GET and HEAD requests,
+    all others are met with a 405.
+    If the image isn't in my static directory, 404 it.
+    """
+
+    query = request['query']
+
+    # first we need to get the image object from my storage
+    the_image = None
+    if 'special' in query.keys():
+        # we have a special command. What's it say?
+        if query['special'] == 'latest':
+            # then the command says grab the newest image
+            the_image = image.get_latest_image()
+        elif query['special'] == 'first':
+            # then the command says grab the oldest image
+            the_image = image.get_oldest_image()
+        else:
+            # we have an invalid special command.
+            the_image = None
+    elif 'img_id' in query.keys():
+        # we have a standard request by ID
+        the_image = image.get_image(query['img_id'])
+    else:
+        # we received an invalid query string.
+        the_image = None
+
+    # then we can figure out what to do with the image
+    if request['REQUEST_METHOD'] not in ['GET', 'HEAD']:
+        # serve a 405
+        response_body = serve_405(request, start_response)
+    elif the_image is not None:
+        # valid method, so start a valid response
+        response_body = the_image['data']
+        start_response('200 OK', [
+            ('Content-Type', ''.join(['image/', the_image['filetype']])),
+            ('Content-Length', str(len(response_body)))
+            ]
+        )
+    else:
+        # if the file couldn't be found, serve a 404
+        response_body = serve_404(request, start_response)
+
+    if request['REQUEST_METHOD'] == 'HEAD':
+        # if we've got a head request, return no content
+        response_body = ''
+
+    return response_body
+
+def receive_dynamic_image(request, start_response, redirect_to):
+    """
+    Processes upload of a dynamic image.
+    Uses the query-string to determine what to do.
+    This page supports only POST requests,
+    all others are met with a 405.
+    """
+
+    if request['REQUEST_METHOD'] != 'POST':
+        # serve a 405
+        response_body = serve_405(request, start_response)
+    else:
+        # attempt to store in the image...
+        img_id = image.add_image(request['content']['file'],
+            request['CONTENT_TYPE'].split('/')[1])
+        # if that worked, we'll have the new image's ID.
+        #  If it didn't work, then we'll have None
+        if img_id is not None:
+            # using 303 - See Other (the proper way to redirect after a POST)
+            start_response('303 See Other', [
+                ('Location', redirect_to)
+                ]
+            )
+            response_body = ''
+        else:
+            # if the file couldn't be found, serve a 404
+            response_body = serve_404(request, start_response)
+
+    if request['REQUEST_METHOD'] == 'HEAD':
+        # if we've got a head request, return no content
+        response_body = ''
+
+    return response_body
+
 def submit(request, start_response):
     """
     Processes a request for the submit page
@@ -259,5 +355,5 @@ def serve_405(request, start_response, allowed=None):
     if allowed is None:
         allowed = ['GET', 'HEAD']
     start_response(('405 Method Not Allowed'),
-        [('Allow', '{0}'.format(', '.join(allowed)))])
+        [('Allow', ', '.join(allowed))])
     return ''
