@@ -30,6 +30,12 @@ def get_text_file(filename):
     """
     return _get_raw_file(filename, '/text/')
 
+def get_js_file(filename):
+    """
+    Get a given static text-file by filename.
+    """
+    return _get_raw_file(filename, '/js/')
+
 def _get_raw_file(filename, directory):
     """
     Get a raw file from a given directory

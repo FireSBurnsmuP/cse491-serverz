@@ -101,7 +101,13 @@
 
 2014-04-12
 
-  * finished imageshare replicate
+  * finished imageapp replicate -> /imageshare
   * app now parses wsgi.input itself
 
   * hw9 go
+  * confirmed imageshare supports jpg
+
+2014-04-14
+
+  * completed tiff support (uses <embed>)
+  * Project for supporting JPEG and TIFF completed

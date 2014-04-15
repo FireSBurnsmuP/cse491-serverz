@@ -112,7 +112,7 @@ def main():
         # teardown stuffs
         if app_to_run == 'imageapp':
             imageapp.teardown()
-        sock.shutdown()
+        sock.shutdown(2)
         sock.close()
 
 

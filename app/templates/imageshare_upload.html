@@ -5,8 +5,12 @@
 {% block content %}
     <h3>Upload an Image:</h3>
 
-    <form enctype="multipart/form-data" action="/imageshare/upload_receive" method="POST">
-        <label>File: <input type="file" name="file" accept="image/jpeg, image/gif, image/png, image/bmp, image/tiff" /></label><br />
-        <input type="submit" value="Upload file">
+    <form enctype="multipart/form-data" action="/imageshare/upload_receive"
+        method="POST">
+        <label>File:
+            <input type="file" name="file" required
+                accept="image/jpeg, image/gif, image/png, image/bmp, image/tiff" />
+        </label><br />
+        <input type="submit" value="Upload file" />
     </form>
 {% endblock %}

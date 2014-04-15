@@ -43,7 +43,14 @@ def base_app(environ, start_response):
             content = {}
             # ... and then parse all keys, values into content.
             for key in temp:
-                content[key.lower()] = temp[key].value
+                lkey = key.lower()
+                print type(temp[key])
+                if hasattr(temp[key], 'file') and temp[key].file:
+                    # we have a file, so let's store the FieldStorage object
+                    content[lkey] = temp[key]
+                else:
+                    # we have something else, just store the value (string)
+                    content[lkey] = temp[key].value
         else:
             # TODO do something with other types
             # reset content to a dictionary
