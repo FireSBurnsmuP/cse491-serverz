@@ -226,18 +226,10 @@ def read_request(conn):
         content = ''
         while len(content) < int(headers['content-length']):
             content += conn.recv(1)
+        # Parse any form data
         if 'content-type' in headers:
-            if 'application/x-www-form-urlencoded' in headers['content-type']:
-                # form encoding's easy: just parse the query string...
-                temp = parse_qs(content)
-                _input = StringIO(content)
-                # ... and store in my dictionary.
-                content = {
-                    key.lower(): temp[key][0]
-                    for key in temp
-                }
-            elif 'multipart/form-data' in headers['content-type']:
-                # Multipart's a bit trickier: going cgi on this one.
+            if ('application/x-www-form-urlencoded' in headers['content-type']
+                or 'multipart/form-data' in headers['content-type']):
                 # Init the field storage...
                 _input = StringIO(content)
                 temp = cgi.FieldStorage(
@@ -248,7 +240,14 @@ def read_request(conn):
                 content = {}
                 # ... and then parse all keys, values into content.
                 for key in temp:
-                    content[key.lower()] = temp[key].value
+                    lkey = key.lower()
+                    print type(temp[key])
+                    if hasattr(temp[key], 'file') and temp[key].file:
+                        # we have a file, so let's store the FieldStorage object
+                        content[lkey] = temp[key]
+                    else:
+                        # we have something else, just store the value (string)
+                        content[lkey] = temp[key].value
             else:
                 # TODO do something with other types
                 # reset content to a dictionary
@@ -256,13 +255,9 @@ def read_request(conn):
         else:
             # TODO is there a default content-type, assuming length is given?
             content = {}
-    elif 'content-type' in headers:
-        # in this case, I may have a complicated situation wherein
-        # I need to actually determine the length manually.
-        # TODO manual length determination, if possible.
-        content = {}
     else:
         # empty content
+        # WSGI spec says don't process if CONTENT-LENGTH isn't specified
         content = {}
 
     # Now to put it all together in one request object:
