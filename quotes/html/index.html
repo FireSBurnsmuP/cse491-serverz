@@ -1,0 +1,22 @@
+<head>
+    <title>Memorable quote generator</title>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script>
+
+    <script type="text/javascript">
+
+    $(function() {
+        $("#generate").click(function() {
+            $("#quote").load("generate_quote");
+        });
+    });
+
+    </script>
+</head>
+
+<body>
+
+<input type="submit" id="generate" value="Generate!">
+
+<div id="quote">This is not the quote you are looking for.</div>
+
+</body>
