@@ -17,9 +17,12 @@ from quixote.demo.mini_demo import create_publisher
 from quixote.demo.altdemo import create_publisher
 import imageapp
 
+from quotes import QuotesApp
+from chat import ChatApp
+
 ###
 
-
+apps = ['fires', 'hw6', 'imageapp', 'quixote_demo', 'quotes', 'chat']
 parser = argparse.ArgumentParser(
     description='A reference wsgi server.',
     formatter_class=argparse.RawTextHelpFormatter
@@ -33,7 +36,7 @@ parser.add_argument('--app',
     nargs='?',
     dest='app',
     default='fires',
-    choices=['fires', 'hw6', 'imageapp', 'quixote_demo'],
+    choices=apps,
     help='\n'.join([
         'Which WSGI application to run.',
         '(default: "%(default)s" - my homework 6)',
@@ -43,7 +46,7 @@ parser.add_argument('-A',
     nargs='?',
     dest='app',
     default='fires',
-    choices=['fires', 'hw6', 'imageapp', 'quixote_demo'],
+    choices=apps,
     help=argparse.SUPPRESS)
 # Add the port argument:
 parser.add_argument('--port',
@@ -68,6 +71,10 @@ elif app_to_run == 'imageapp':
     imageapp.setup()
     p = imageapp.create_publisher()
     wsgi_app = quixote.get_wsgi_app()
+elif app_to_run == 'quotes':
+    wsgi_app = QuotesApp('./quotes/quotes.txt', './quotes/html')
+elif app_to_run == 'chat':
+    wsgi_app = ChatApp('./chat/html')
 else: #if app_to_run == 'fires': # default
     wsgi_app = app.make_app()
 

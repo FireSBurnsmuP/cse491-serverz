@@ -2,11 +2,32 @@
 
 {% block title %}Fires&apos; Image Sharing Application{% endblock %}
 
+{% block head_add %}
+    <script src="/js/imageshare.js"></script>
+{% endblock %}
+
 {% block content %}
     <a href="imageshare/upload">Upload an image</a> |
     <a href="imageshare/image_view">Show most recent image</a>
-    <p>
-        Here is the most recently shared image:<br />
-        <img width="40%" src="/imageshare/image_raw?special=latest"/>
-    </p>
+    <div>
+        <h6>Here is the most recently shared image:</h6>
+        <noscript>
+            <p class="alert alert-error">
+                Javascript must be enabled in order to view TIFF images
+                on most browsers, but any other type of image
+                <i>should</i> display properly.<br />
+                <strong>It is strongly recommended</strong>
+                that you enable javascript in order to get the best
+                experience on this website.
+            </p>
+            <img width="40%" src="/imageshare/image_raw?special=latest"/>
+        </noscript>
+        <div id="imgContainer">
+        </div>
+        <script>
+            $(function() {
+                GetImage("latest", "imgContainer");
+            });
+        </script>
+    </div>
 {% endblock %}

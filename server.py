@@ -18,6 +18,9 @@ from quixote.demo.mini_demo import create_publisher
 from quixote.demo.altdemo import create_publisher
 import imageapp
 
+from quotes import QuotesApp
+from chat import ChatApp
+
 
 CRLF = "\r\n"
 
@@ -30,6 +33,7 @@ def main():
     then waits for connections
     """
 
+    apps = ['fires', 'hw6', 'imageapp', 'quixote_demo', 'quotes', 'chat']
     parser = argparse.ArgumentParser(
         description='A WSGI Server implemented for CSE491-001.',
         epilog='Please check the non-existent documentation for more info.',
@@ -44,7 +48,7 @@ def main():
         nargs='?',
         dest='app',
         default='fires',
-        choices=['fires', 'hw6', 'imageapp', 'quixote_demo'],
+        choices=apps,
         help='\n'.join([
             'Which WSGI application to run.',
             '(default: "%(default)s" - my homework 6)',
@@ -54,7 +58,7 @@ def main():
         nargs='?',
         dest='app',
         default='fires',
-        choices=['fires', 'hw6', 'imageapp', 'quixote_demo'],
+        choices=apps,
         help=argparse.SUPPRESS)
     # Add the port argument:
     parser.add_argument('--port',
@@ -97,6 +101,10 @@ def main():
         imageapp.setup()
         p = imageapp.create_publisher()
         wsgi_app = quixote.get_wsgi_app()
+    elif app_to_run == 'quotes':
+        wsgi_app = QuotesApp('./quotes/quotes.txt', './quotes/html')
+    elif app_to_run == 'chat':
+        wsgi_app = ChatApp('./chat/html')
     else: #if app_to_run == 'fires': # default
         wsgi_app = app.make_app()
 
@@ -112,7 +120,7 @@ def main():
         # teardown stuffs
         if app_to_run == 'imageapp':
             imageapp.teardown()
-        sock.shutdown()
+        sock.shutdown(2)
         sock.close()
 
 
@@ -226,29 +234,30 @@ def read_request(conn):
         content = ''
         while len(content) < int(headers['content-length']):
             content += conn.recv(1)
+        # Parse any form data
         if 'content-type' in headers:
-            if 'application/x-www-form-urlencoded' in headers['content-type']:
-                # form encoding's easy: just parse the query string...
-                temp = parse_qs(content)
-                _input = StringIO(content)
-                # ... and store in my dictionary.
-                content = {
-                    key.lower(): temp[key][0]
-                    for key in temp
-                }
-            elif 'multipart/form-data' in headers['content-type']:
-                # Multipart's a bit trickier: going cgi on this one.
+            if ('application/x-www-form-urlencoded' in headers['content-type']
+                or 'multipart/form-data' in headers['content-type']):
                 # Init the field storage...
                 _input = StringIO(content)
                 temp = cgi.FieldStorage(
                     headers=headers, fp=_input,
                     environ={'REQUEST_METHOD' : 'POST'}
                 )
+                # ... re-init the input stream
+                _input = StringIO(content)
                 # ... reset content to a dictionary...
                 content = {}
                 # ... and then parse all keys, values into content.
                 for key in temp:
-                    content[key.lower()] = temp[key].value
+                    lkey = key.lower()
+                    print type(temp[key])
+                    if hasattr(temp[key], 'file') and temp[key].file:
+                        # we have a file, so let's store the FieldStorage object
+                        content[lkey] = temp[key]
+                    else:
+                        # we have something else, just store the value (string)
+                        content[lkey] = temp[key].value
             else:
                 # TODO do something with other types
                 # reset content to a dictionary
@@ -256,13 +265,9 @@ def read_request(conn):
         else:
             # TODO is there a default content-type, assuming length is given?
             content = {}
-    elif 'content-type' in headers:
-        # in this case, I may have a complicated situation wherein
-        # I need to actually determine the length manually.
-        # TODO manual length determination, if possible.
-        content = {}
     else:
         # empty content
+        # WSGI spec says don't process if CONTENT-LENGTH isn't specified
         content = {}
 
     # Now to put it all together in one request object:

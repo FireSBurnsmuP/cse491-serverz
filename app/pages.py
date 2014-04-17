@@ -35,6 +35,8 @@ def serve_page(request, start_response):
         response_body = submit(request, start_response)
     elif path == '/imageshare':
         response_body = std_html('imageshare', request, start_response)
+    elif path == '/js/imageshare.js':
+        response_body = serve_static_js('imageshare.js', request, start_response)
     elif path == '/imageshare/upload':
         response_body = std_html('imageshare_upload', request, start_response)
     elif path == '/imageshare/upload_receive':
@@ -44,6 +46,8 @@ def serve_page(request, start_response):
         response_body = std_html('imageshare_view', request, start_response)
     elif path == '/imageshare/image_raw':
         response_body = serve_dynamic_image(request, start_response)
+    elif path == '/imageshare/image_markup':
+        response_body = get_dynamic_image_markup(request, start_response)
     else:
         # This is not the page you are looking for...
         response_body = serve_404(request, start_response)
@@ -125,6 +129,33 @@ def static_file(request, start_response):
     response_body = serve_static_file(
         'psxrip', request, start_response
         )
+    return response_body
+
+def serve_static_js(filename, request, start_response):
+    """
+    Processes a request for a text-file by filename.
+    This page supports GET and HEAD requests,
+    all others are met with a 405.
+    If the image isn't in my static directory, 404 it.
+    """
+
+    if request['REQUEST_METHOD'] in ['GET', 'HEAD']:
+        response_body = static_files.get_js_file(filename)
+        if response_body is not None:
+            start_response('200 OK', [
+                ('Content-Type', 'text/javascript; charset=utf-8'),
+                ('Content-Length', str(len(response_body)))
+                ]
+            )
+        else:
+            # if the file couldn't be found, serve a 404
+            response_body = serve_404(request, start_response)
+    else:
+        response_body = serve_405(request, start_response)
+
+    if request['REQUEST_METHOD'] == 'HEAD':
+        response_body = ''
+
     return response_body
 
 def static_image(request, start_response):
@@ -228,6 +259,77 @@ def serve_dynamic_image(request, start_response):
 
     return response_body
 
+def get_dynamic_image_markup(request, start_response):
+    """
+    Processes a request for a dynamic image's required markup.
+    That is: returns an HTML string for the display of a given
+    image. Added for TIFF support, which requires different markup
+    from everything else.
+    Uses the query-string to determine what to do.
+    This page supports GET and HEAD requests,
+    all others are met with a 405.
+    If the image isn't in my static directory, 404 it.
+    """
+
+    query = request['query']
+
+    # first we need to get the image object from my storage
+    the_image = None
+    if 'special' in query.keys():
+        # we have a special command. What's it say?
+        if query['special'] == 'latest':
+            # then the command says grab the newest image
+            the_image = image.get_latest_image()
+        elif query['special'] == 'first':
+            # then the command says grab the oldest image
+            the_image = image.get_oldest_image()
+        else:
+            # we have an invalid special command.
+            the_image = None
+    elif 'img_id' in query.keys():
+        # we have a standard request by ID
+        the_image = image.get_image(query['img_id'])
+    else:
+        # we received an invalid query string.
+        the_image = None
+
+    # then we can figure out what to do with the image
+    response_body = ''
+    if request['REQUEST_METHOD'] not in ['GET', 'HEAD']:
+        # serve a 405
+        response_body = serve_405(request, start_response)
+    elif the_image is not None:
+        # valid method, so start a valid response
+        if 'tiff' in the_image['filetype']:
+            # TODO dynamic image sizes
+            response_body = ''.join([
+                '<embed width=512 height=512',
+                    ' src="/imageshare/image_raw?' + request['QUERY_STRING'],
+                    '" type="' + the_image['filetype'] + '" />'
+                ]
+            )
+        else:
+            response_body = ''.join([
+                '<img width="40%" src="/imageshare/image_raw?',
+                request['QUERY_STRING'],
+                '" />'
+                ]
+            )
+        start_response('200 OK', [
+            ('Content-Type', 'text/html'),
+            ('Content-Length', str(len(response_body)))
+            ]
+        )
+    else:
+        # if the file couldn't be found, serve a 404
+        response_body = serve_404(request, start_response)
+
+    if request['REQUEST_METHOD'] == 'HEAD':
+        # if we've got a head request, return no content
+        response_body = ''
+
+    return response_body
+
 def receive_dynamic_image(request, start_response, redirect_to):
     """
     Processes upload of a dynamic image.
@@ -236,13 +338,13 @@ def receive_dynamic_image(request, start_response, redirect_to):
     all others are met with a 405.
     """
 
-    if request['REQUEST_METHOD'] != 'POST':
+    if request['REQUEST_METHOD'].upper() != 'POST':
         # serve a 405
         response_body = serve_405(request, start_response)
     else:
         # attempt to store in the image...
-        img_id = image.add_image(request['content']['file'],
-            request['CONTENT_TYPE'].split('/')[1])
+        img_id = image.add_image(request['content']['file'].value,
+            request['content']['file'].type.split('/')[1])
         # if that worked, we'll have the new image's ID.
         #  If it didn't work, then we'll have None
         if img_id is not None:
