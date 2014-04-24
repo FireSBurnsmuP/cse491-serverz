@@ -38,7 +38,7 @@
  * PEP8 style conformity now confirmed (yay pylint)
  ** TODO ** add tests for new functionality
 
-2014-02-14
+2014-02-14 Chris Thomas
 
  * Updated tests for everything but actually sending multipart POSTs out.
    Still working on figuring that one out.
@@ -47,16 +47,16 @@
  * Calling HW4 done, a week late, with no progress on hw5, and taking time off
    work. Hooray, computer science... >.<
 
-2014-02-14
+2014-02-14 Chris Thomas
 
  * Adding hw5 branch, not sure why I don't skip to hw6 at this point...
 
-2014-02-15
+2014-02-15 Chris Thomas
 
  * Finished HW5. Only thing not tested if multipart/form-data
    (still don't know how)
 
-2014-02-27
+2014-02-27 Chris Thomas
 
  * Starting hw6
  * Added test for multipart/form-data and got it to actually work
@@ -65,17 +65,17 @@
  * Added file hosting on /file and /image, hosting the aforementioned files
  * modified tests to accurately test /file (good) and /image (sorta)
 
-2014-03-18
+2014-03-18 Chris Thomas
 
  * Started hw7 branch (again, after merging)
 
-2014-03-19
+2014-03-19 Chris Thomas
 
   * fixed date on last Changelog
   * cookie passing (server) implemented
   * Added image to imageapp's index
 
-2014-03-20
+2014-03-20 Chris Thomas
 
   * more wsgi compliance
   * considered moving app into a proper module structure... maybe later.
@@ -84,51 +84,58 @@
   * add twill tests
   * create twill test for myapp
 
-2014-04-02
+2014-04-02 Chris Thomas
 
   * package app.py into its own package, to make it easier to write good code
   * documentation, etc.
   * start getting app's imageapp up and running
 
-2014-04-03
+2014-04-03 Chris Thomas
 
   * nosetests now work again, they haven't since the wsgi refactor
 
-2014-04-07
+2014-04-07 Chris Thomas
 
   * fixed imageshare/image_raw on ref-server, now works on both
   * imageshare/image_view now working (preliminary)
 
-2014-04-12
+2014-04-12 Chris Thomas
 
-  * finished imageapp replicate -> /imageshare
+  * finished imageapp replicate -> /imageshare (+5 pts)
   * app now parses wsgi.input itself
 
   * hw9 go
   * confirmed imageshare supports jpg
 
-2014-04-14
+2014-04-14 Chris Thomas
 
   * completed tiff support (uses <embed>)
-  * Project for supporting JPEG and TIFF completed
-  * image uploading unexplicably fixed? Dunno what (specfically) I changed,
+  * Project for supporting JPEG and TIFF completed (+5 pts)
+    * Also supports many other major formats (bmp, gif, png, jpg, tiff)
+    * stored the filetype alongside the image data
+    * use ajax endpoint to get HMTL code to display the image on-page
+      * <embed> for tiff, <img> for everything else
+    * jquery used to insert image's code on-page, with <noscript> fallback
+      of type <img> with message saying stop being paranoid
+  * image uploading unexplicably fixed? Dunno what (specifically) I changed,
     but it works now.
   * Also: TIFF isn't actually supported by any browsers in <img>, so I am using
     AJAX on every page to ask the image module what to use to display the
     image, returning a <embed> tag for tiffs and <img> tags for everything else.
-    I talked to you about this, and you said extra project points.
+    I talked to you about this, and you said extra project points. (+5 pts)
   * support for .bmp, .gif, tiff, png, jpg confirmed.
   * some sample images provided, not enough for a project point yet, though
 
-2014-04-16
+2014-04-16 Chris Thomas
 
   * improved quote list.
   * better quotes app pep8 compliance.
   * quotes app integrated under / for hw9
 
-2014-04-17
+2014-04-17 Chris Thomas
 
   * chat app improved (update via ajax every 5 seconds)
+  * ^ just noticed that's a project (+5 pts)
   * chat app added time display, messages added at end (in chrono order)
   * fixed wsgi.input in environ (server.py)
   * chat app integrated
@@ -137,4 +144,10 @@
   * hw9 done
 
   * hw10 go
+  * current point total (20)
+  * favicon serving (tested, working sometimes... hopefully just ff being weird)
+  * going for (12) ajax uploading and (16) sqlite persistence
+2014-04-23 Chris Thomas
+  * ajax uploads completed (+5 pts)
+    * it will not work in IE9-, but should fallback on form submission OK.
 

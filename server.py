@@ -251,8 +251,7 @@ def read_request(conn):
                 # ... and then parse all keys, values into content.
                 for key in temp:
                     lkey = key.lower()
-                    print type(temp[key])
-                    if hasattr(temp[key], 'file') and temp[key].file:
+                    if temp[key].file:
                         # we have a file, so let's store the FieldStorage object
                         content[lkey] = temp[key]
                     else:

@@ -16,6 +16,9 @@ def add_image(data, filetype='jpeg'):
     else:
         image_num = 0
 
+    if filetype == 'jpg':
+        filetype = 'jpeg'
+
     images[image_num] = {'data': data, 'filetype': filetype}
     return image_num
 
