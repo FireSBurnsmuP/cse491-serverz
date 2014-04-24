@@ -144,10 +144,14 @@
   * hw9 done
 
   * hw10 go
-  * current point total (20)
+  * current point total: 20 (10 pts ahead of schedule)
   * favicon serving (tested, working sometimes... hopefully just ff being weird)
-  * going for (12) ajax uploading and (16) sqlite persistence
+  * going for (12) ajax uploading and (16) sqlite persistence (defered to hw11)
 2014-04-23 Chris Thomas
   * ajax uploads completed (+5 pts)
     * it will not work in IE9-, but should fallback on form submission OK.
+  * hw10 finished (calling it, because I'm 5 pts ahead of schedule still)
+
+  * current point total: 25 (5 pts ahead)
+
 
