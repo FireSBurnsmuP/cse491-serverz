@@ -2,11 +2,81 @@
 
 {% block title %}Upload - Fires&apos; Image Sharing Application{% endblock %}
 
+{% block head_add %}
+<script>
+var file = {};
+var data;
+$(function(){
+    // hide all the alerts
+    $(".alert").each(function(){
+        $(this).hide();
+    });
+    // set a change function on the input to grab the file and store it
+    $("input[type=file]").change(function(event) {
+        $.each(event.target.files, function(index, file) {
+        //     // create a FileReader
+        //     var reader = new FileReader();
+        //     // once it's ready...
+        //     reader.onload = function(event) {
+        //         // grab the information...
+        //         object = {};
+        //         object.filename = file.name;
+        //         object.data = event.target.result;
+        //         // and store it in my file object
+        //         file = object;
+        //     };
+        //     // this makes it read it like URL data
+        //     reader.readAsDataURL(file);
+            data = new FormData();
+            data.append('file', file);
+        });
+    });
+    // override the submit functionality of the form
+    $("#fileForm").submit(function(e) {
+        // show the uploading message
+        $('#alertUploading').show();
+        // send it to the upload receiver
+        $.ajax({
+            url: '/imageshare/ajax_upload_receive',
+            type: 'POST',
+            cache: false,
+            contentType: false,
+            processData: false,
+            data: data
+        }).done(function(data, textStatus, jqXHR) {
+            $('#alertSuccess').show();
+        }).fail(function(jqXHR, textStatus, errorThrown) {
+            $('#alertFailure').append(errorThrown).show();
+        }).always(function() {
+            $('#alertUploading').hide();
+        });
+        // reset vars
+        file = {};
+        /* including FormData, which will cause crashes in IE9-
+         * preventDefault'ing after this call assures that the form will submit
+         * sans-ajax in pre IE10 environs
+         */
+        data = new FormData();
+        e.preventDefault();
+    });
+});
+</script>
+{% endblock %}
+
 {% block content %}
     <h3>Upload an Image:</h3>
 
+    <p id="alertSuccess" class="alert alert-success">
+        The file was uploaded successfully.
+    </p>
+    <p id="alertUploading" class="alert alert-info">
+        Uploading... please wait...
+    </p>
+    <p id="alertFailure" class="alert alert-error">
+        A problem occured while uploading the file:<br />
+    </p>
     <form enctype="multipart/form-data" action="/imageshare/upload_receive"
-        method="POST">
+        id="fileForm" method="POST">
         <label>File:
             <input type="file" name="file" required
                 accept="image/jpeg, image/gif, image/png, image/bmp, image/tiff" />

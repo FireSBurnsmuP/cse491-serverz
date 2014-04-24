@@ -23,6 +23,9 @@ def serve_page(request, start_response):
 
     if path in ('', '/', 'index'):
         response_body = std_html('index', request, start_response)
+    elif path == '/favicon.ico':
+        response_body = serve_static_image(
+            'favicon.ico', request, start_response)
     elif path == '/content':
         response_body = std_html('content', request, start_response)
     elif path == '/file':
@@ -36,12 +39,15 @@ def serve_page(request, start_response):
     elif path == '/imageshare':
         response_body = std_html('imageshare', request, start_response)
     elif path == '/js/imageshare.js':
-        response_body = serve_static_js('imageshare.js', request, start_response)
+        response_body = serve_static_js(
+            'imageshare.js', request, start_response)
     elif path == '/imageshare/upload':
         response_body = std_html('imageshare_upload', request, start_response)
     elif path == '/imageshare/upload_receive':
         response_body = receive_dynamic_image(
             request, start_response, '/imageshare')
+    elif path == '/imageshare/ajax_upload_receive':
+        response_body = receive_dynamic_image(request, start_response)
     elif path == '/imageshare/image_view':
         response_body = std_html('imageshare_view', request, start_response)
     elif path == '/imageshare/image_raw':
@@ -52,7 +58,7 @@ def serve_page(request, start_response):
         # This is not the page you are looking for...
         response_body = serve_404(request, start_response)
 
-    if path not in ['/image', '/imageshare/image_raw']:
+    if path not in ['/image', '/imageshare/image_raw', '/favicon.ico']:
         response_body = [response_body.encode('utf-8')]
 
     return response_body
@@ -176,12 +182,19 @@ def serve_static_image(filename, request, start_response):
     all others are met with a 405.
     If the image isn't in my static directory, 404 it.
     """
+    # get the file extension (supports multiple extensions)
+    filetype = filename.split('.')[-1].lower()
+    # convert jpg to 'jpeg' for mimetype compatibility
+    if filetype == 'jpg':
+        filetype = 'jpeg'
+    if filetype == 'ico':
+        filetype = 'x-icon'
 
     if request['REQUEST_METHOD'] == 'GET':
         response_body = static_files.get_image_file(filename)
         if response_body is not None:
             start_response('200 OK', [
-                ('Content-Type', 'image/jpeg'),
+                ('Content-Type', 'image/%s' % (filetype)),
                 ('Content-Length', str(len(response_body)))
                 ]
             )
@@ -193,7 +206,7 @@ def serve_static_image(filename, request, start_response):
         response_body = static_files.get_image_file(filename)
         if response_body is not None:
             start_response('200 OK', [
-                ('Content-Type', 'image/jpeg'),
+                ('Content-Type', 'image/%s' % (filetype)),
                 ('Content-Length', str(len(response_body)))
                 ]
             )
@@ -330,7 +343,7 @@ def get_dynamic_image_markup(request, start_response):
 
     return response_body
 
-def receive_dynamic_image(request, start_response, redirect_to):
+def receive_dynamic_image(request, start_response, redirect_to=None):
     """
     Processes upload of a dynamic image.
     Uses the query-string to determine what to do.
@@ -348,12 +361,22 @@ def receive_dynamic_image(request, start_response, redirect_to):
         # if that worked, we'll have the new image's ID.
         #  If it didn't work, then we'll have None
         if img_id is not None:
-            # using 303 - See Other (the proper way to redirect after a POST)
-            start_response('303 See Other', [
-                ('Location', redirect_to)
-                ]
-            )
-            response_body = ''
+            if redirect_to is not None:
+                # using 303 - See Other (the proper way to redirect after a POST)
+                start_response('303 See Other', [
+                    ('Location', redirect_to)
+                    ]
+                )
+                response_body = ''
+            else:
+                # don't redirect, assume AJAX, send response in JSON
+                # TODO add in image information
+                response_body = '{"success": "true"}'
+                start_response('200 OK', [
+                    ('Content-Type', 'application/json'),
+                    ('Content-Length', str(len(response_body)))
+                    ]
+                )
         else:
             # if the file couldn't be found, serve a 404
             response_body = serve_404(request, start_response)
