@@ -147,6 +147,7 @@
   * current point total: 20 (10 pts ahead of schedule)
   * favicon serving (tested, working sometimes... hopefully just ff being weird)
   * going for (12) ajax uploading and (16) sqlite persistence (defered to hw11)
+
 2014-04-23 Chris Thomas
   * ajax uploads completed (+5 pts)
     * it will not work in IE9-, but should fallback on form submission OK.
@@ -154,3 +155,11 @@
 
   * current point total: 25 (5 pts ahead)
   * hw11 go (again)
+  * cookieapp integrated (use -A cookie), twill test also copied over
+  * cookies confirmed functioning in server.py
+
+2014-04-25 Chris Thomas
+  * sqlite database implemented for my imageapp
+    (I did it for hw11, which asks specifically for it,
+     but do I get points still?) ? (+5 pts) : (+0 pts)
+  * my imageapp still functioning properly

@@ -356,7 +356,9 @@ def receive_dynamic_image(request, start_response, redirect_to=None):
         response_body = serve_405(request, start_response)
     else:
         # attempt to store in the image...
-        img_id = image.add_image(request['content']['file'].value,
+        img_id = image.add_image(
+            request['content']['file'].filename,
+            request['content']['file'].value,
             request['content']['file'].type.split('/')[1])
         # if that worked, we'll have the new image's ID.
         #  If it didn't work, then we'll have None
@@ -378,8 +380,25 @@ def receive_dynamic_image(request, start_response, redirect_to=None):
                     ]
                 )
         else:
-            # if the file couldn't be found, serve a 404
-            response_body = serve_404(request, start_response)
+            if redirect_to is not None:
+                # if the file couldn't be found, and we're doing
+                # a standard web-request, then serve a 500 (idk what went wrong)
+                response_body = 'Unable to add image to the database...'
+                start_response('500 Internal Server Error', [
+                    ('Content-Type', 'text/html'),
+                    ('Content-Length', str(len(response_body)))
+                    ]
+                )
+            else:
+                response_body = ' '.join([
+                    '{"success": "false",',
+                    '"message": "Unable to add image to the database..."}'
+                ])
+                start_response('500 Internal Server Error', [
+                    ('Content-Type', 'application/json'),
+                    ('Content-Length', str(len(response_body)))
+                    ]
+                )
 
     if request['REQUEST_METHOD'] == 'HEAD':
         # if we've got a head request, return no content
