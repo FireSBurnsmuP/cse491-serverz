@@ -20,7 +20,7 @@ import imageapp
 
 from quotes import QuotesApp
 from chat import ChatApp
-
+import cookieapp
 
 CRLF = "\r\n"
 
@@ -33,7 +33,14 @@ def main():
     then waits for connections
     """
 
-    apps = ['fires', 'hw6', 'imageapp', 'quixote_demo', 'quotes', 'chat']
+    apps = [
+        'fires', 'hw6',
+        'imageapp',
+        'quixote_demo',
+        'quotes',
+        'chat',
+        'cookie'
+    ]
     parser = argparse.ArgumentParser(
         description='A WSGI Server implemented for CSE491-001.',
         epilog='Please check the non-existent documentation for more info.',
@@ -105,6 +112,8 @@ def main():
         wsgi_app = QuotesApp('./quotes/quotes.txt', './quotes/html')
     elif app_to_run == 'chat':
         wsgi_app = ChatApp('./chat/html')
+    elif app_to_run == 'cookie':
+        wsgi_app = cookieapp.wsgi_app
     else: #if app_to_run == 'fires': # default
         wsgi_app = app.make_app()
 

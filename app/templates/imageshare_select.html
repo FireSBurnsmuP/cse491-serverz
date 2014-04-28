@@ -1,13 +1,25 @@
 {% extends "imageshare.html" %}
 
-{% block title_prefix %}View{% endblock %}
+{% block title_prefix %}Select an Image{% endblock %}
+
+{% block img_head_add %}
+    <style>
+    #imgContainer {
+        height: 30.0em;
+        overflow-y: auto;
+    }
+    #imgContainer a {
+        color: #000000 !important;
+    }
+    </style>
+{% endblock %}
 
 {% block breadcrumbs %}
-        <a href="/imageshare">Imageshare</a> | View
+<a href="/imageshare">Imageshare</a> | Select an Image
 {% endblock %}
 
 {% block img_content %}
-    <h3>Here is your image:</h3>
+    <h3>Select an Image to view:</h3>
     <noscript>
         <p class="alert alert-error">
             Javascript must be enabled in order to view TIFF images
@@ -17,13 +29,14 @@
             that you enable javascript in order to get the best
             experience on this website.
         </p>
-        <img width="40%" src="/imageshare/image_raw?{{imagequery}}"/>
+        <img width="40%" src="/imageshare/image_raw?special=latest"/>
     </noscript>
     <div id="imgContainer">
+        {{imagehtml}}
     </div>
     <script>
         $(function() {
-            GetImage("{{imageid}}", "imgContainer");
+{{imagejs}}
         });
     </script>
 {% endblock %}

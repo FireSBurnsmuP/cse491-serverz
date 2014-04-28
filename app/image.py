@@ -4,22 +4,20 @@ Takes care of handling image storage
 # TODO use a database; I don't like this in-memory stuff.
 
 from . import static_files
+from . import sqldb
 
-images = {}
+# images = {}
 
-def add_image(data, filetype='jpeg'):
+def add_image(filename, data, filetype='jpeg'):
     """
     Adds an image into my internal storage
     """
-    if images:
-        image_num = max(images.keys()) + 1
-    else:
-        image_num = 0
-
+    # adjust some filetypes...
     if filetype == 'jpg':
         filetype = 'jpeg'
-
-    images[image_num] = {'data': data, 'filetype': filetype}
+    # and add the image in the database
+    image_num = sqldb.add_image(filename, filetype, data)
+    # then return the new ID number
     return image_num
 
 def get_image(id_num):
@@ -27,24 +25,22 @@ def get_image(id_num):
     Gets an image by its ID
     Returns None if an image by that ID doesn't exist
     """
-    if id_num in images.keys():
-        return images[id_num]
-    else:
-        return None
+    return sqldb.get_image(id_num)
 
 def get_latest_image():
     """
     Grabs the most recently stored image
     """
-    image_num = max(images.keys())
-    return images[image_num]
+    return sqldb.get_latest_image()
 
 def get_oldest_image():
     """
     Grabs the first image stored
     """
-    image_num = min(images.keys())
-    return images[image_num]
+    return sqldb.get_oldest_image()
 
 # add in the initial image on load
-add_image(static_files.get_image_file('neuromancer.jpg'), 'jpeg')
+temp = get_latest_image()
+if temp is None:
+    add_image('neuromancer',
+        static_files.get_image_file('neuromancer.jpg'), 'jpeg')

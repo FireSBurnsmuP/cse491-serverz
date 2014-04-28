@@ -147,11 +147,34 @@
   * current point total: 20 (10 pts ahead of schedule)
   * favicon serving (tested, working sometimes... hopefully just ff being weird)
   * going for (12) ajax uploading and (16) sqlite persistence (defered to hw11)
+
 2014-04-23 Chris Thomas
   * ajax uploads completed (+5 pts)
     * it will not work in IE9-, but should fallback on form submission OK.
   * hw10 finished (calling it, because I'm 5 pts ahead of schedule still)
 
   * current point total: 25 (5 pts ahead)
+  * hw11 go (again)
+  * cookieapp integrated (use -A cookie), twill test also copied over
+  * cookies confirmed functioning in server.py
 
+2014-04-25 Chris Thomas
+  * sqlite database implemented for my imageapp
+    (I did it for hw11, which asks specifically for it,
+     but do I get points still?) ? (+5 pts) : (+0 pts)
+  * my imageapp still functioning properly
 
+2014-04-27 Chris Thomas
+  * implemented use of img_ids (already partially there)
+    with redirects from ?special=latest/oldest to their respective
+    images by ID (+5 points)
+
+2014-04-28 Chris Thomas
+  * Implement Image Select page, allowing a user to view thumbnails
+    of all images, and select which one to view. (img tag sizing, ajax loading)
+    (+5 pts)
+  * nested template for imageshare, some styling added
+  * added loading gifs, one of which is used for image_markup loading
+    and uploading (although it's fast enough that I don't see it ever).
+  * Loader image preloaded on-page with css, too; although I'm not sure that
+    caching is actually doing any good.
