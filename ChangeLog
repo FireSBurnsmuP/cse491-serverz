@@ -178,3 +178,8 @@
     and uploading (although it's fast enough that I don't see it ever).
   * Loader image preloaded on-page with css, too; although I'm not sure that
     caching is actually doing any good.
+
+  * current point total: 35/40 (depending on sqlite)
+  * 5-10 points ahead (depending on sqlite)
+  * HW12 go!
+
