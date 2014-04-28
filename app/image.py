@@ -40,4 +40,7 @@ def get_oldest_image():
     return sqldb.get_oldest_image()
 
 # add in the initial image on load
-add_image('neuromancer', static_files.get_image_file('neuromancer.jpg'), 'jpeg')
+temp = get_latest_image()
+if temp is None:
+    add_image('neuromancer',
+        static_files.get_image_file('neuromancer.jpg'), 'jpeg')

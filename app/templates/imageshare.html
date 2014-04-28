@@ -1,15 +1,54 @@
 {% extends "base.html" %}
 
-{% block title %}Fires&apos; Image Sharing Application{% endblock %}
+{% block title %}{% block title_prefix %}Home{% endblock %} - Fires&apos; Image Sharing Application{% endblock %}
 
 {% block head_add %}
     <script src="/js/imageshare.js"></script>
+    <style>
+    a {
+        color: #D08E63 !important;
+    }
+    #breadcrumbs {
+        float: right;
+        font-size: 0.8em;
+    }
+    #breadcrumbs a {
+        color: #D08E63 !important;
+    }
+    .clearFloat {
+        clear: both;
+    }
+    .loader {
+        background-image: url(/static/images/loader.gif);
+        background-repeat: no-repeat;
+        background-position: left top;
+    }
+    .loader-big {
+        background-image: url(/static/images/large_loader.gif);
+        background-repeat: no-repeat;
+        background-position: left top;
+    }
+    .hidden {
+        display: none;
+    }
+    </style>
+    {% block img_head_add %}
+    {% endblock %}
 {% endblock %}
 
 {% block content %}
-    <a href="imageshare/upload">Upload an image</a> |
-    <a href="imageshare/image_view">Show most recent image</a>
+    <div id="breadcrumbs">
+        {% block breadcrumbs %}{% endblock %}
+        <br class="clearfloat" />
+    </div>
+    <div id="topMenu">
+        <a href="/imageshare/upload">Upload an image</a> |
+        <a href="/imageshare/image_view?special=latest">Latest Image</a> |
+        <a href="/imageshare/image_select">Select an Image</a>
+    </div>
     <div>
+        <img src="/static/images/loader.gif" class="hidden" />
+        {% block img_content %}
         <h6>Here is the most recently shared image:</h6>
         <noscript>
             <p class="alert alert-error">
@@ -29,5 +68,6 @@
                 GetImage("latest", "imgContainer");
             });
         </script>
+        {% endblock %}
     </div>
 {% endblock %}

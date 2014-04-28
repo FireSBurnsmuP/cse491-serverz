@@ -1,8 +1,8 @@
-{% extends "base.html" %}
+{% extends "imageshare.html" %}
 
-{% block title %}Upload - Fires&apos; Image Sharing Application{% endblock %}
+{% block title_prefix %}Upload{% endblock %}
 
-{% block head_add %}
+{% block img_head_add %}
 <script>
 var file = {};
 var data;
@@ -34,6 +34,8 @@ $(function(){
     // override the submit functionality of the form
     $("#fileForm").submit(function(e) {
         // show the uploading message
+        $('#alertSuccess').hide();
+        $('#alertFailure').hide();
         $('#alertUploading').show();
         // send it to the upload receiver
         $.ajax({
@@ -63,14 +65,18 @@ $(function(){
 </script>
 {% endblock %}
 
-{% block content %}
+{% block breadcrumbs %}
+    <a href="/imageshare">Imageshare</a> | Upload
+{% endblock %}
+
+{% block img_content %}
     <h3>Upload an Image:</h3>
 
     <p id="alertSuccess" class="alert alert-success">
         The file was uploaded successfully.
     </p>
     <p id="alertUploading" class="alert alert-info">
-        Uploading... please wait...
+        <span class="loader"></span>Uploading... please wait...
     </p>
     <p id="alertFailure" class="alert alert-error">
         A problem occured while uploading the file:<br />
@@ -79,7 +85,7 @@ $(function(){
         id="fileForm" method="POST">
         <label>File:
             <input type="file" name="file" required
-                accept="image/jpeg, image/gif, image/png, image/bmp, image/tiff" />
+                accept="image/jpeg, image/gif, image/png, image/bmp, image/tiff, image/x-icon" />
         </label><br />
         <input type="submit" value="Upload file" />
     </form>
